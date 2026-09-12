@@ -157,7 +157,8 @@ export function parsePolarEquationString(eq_str) {
     console.log(`Failed to parse polar equation: ${error}`);
     return null;
   }
-  var error_func = function (x, y) { return Math.abs(left_eq(x, y) - right_eq(x, y)); };
+  // Compare real parts only after evaluating each complete side of the equation.
+  var error_func = function (x, y) { return Math.abs(math.re(left_eq(x, y)) - math.re(right_eq(x, y))); };
 
   return error_func;
 }
@@ -223,7 +224,8 @@ export function parseEquationString(eq_str) {
     console.log(`Error parsing equation: ${error}`);
     return null;
   }
-  var error_func = function (x, y) { return Math.abs(left_eq(x, y) - right_eq(x, y)); };
+  // Compare real parts only after evaluating each complete side of the equation.
+  var error_func = function (x, y) { return Math.abs(math.re(left_eq(x, y)) - math.re(right_eq(x, y))); };
 
   error_func._source = eq_str;
   error_func._isPolar = false;
@@ -408,6 +410,10 @@ function nodeToGLSL(node) {
     case 'OperatorNode': {
       const op = node.op;
       if (op === '^') {
+        const exponent = node.args[1];
+        if (exponent.type !== 'ConstantNode' || !Number.isInteger(Number(exponent.value))) {
+          throw new Error('Complex powers require CPU evaluation.');
+        }
         return `pow(${nodeToGLSL(node.args[0])}, ${nodeToGLSL(node.args[1])})`;
       }
       if (node.args.length === 1) {
@@ -419,6 +425,11 @@ function nodeToGLSL(node) {
     }
     case 'FunctionNode': {
       const fnName = node.name;
+      // Float-only shaders cannot preserve complex intermediate values. Let mathjs
+      // evaluate these expressions on the CPU before taking their real parts.
+      if (['sqrt', 'log', 'ln', 'asin', 'acos', 'pow'].includes(fnName)) {
+        throw new Error(`${fnName} requires complex-aware CPU evaluation.`);
+      }
       const args = node.args.map(nodeToGLSL).join(', ');
       const fnMap = {
         'sin': 'sin', 'cos': 'cos', 'tan': 'tan', 'asin': 'asin', 'acos': 'acos', 'atan': 'atan',

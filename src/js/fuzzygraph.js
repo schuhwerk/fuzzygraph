@@ -202,7 +202,8 @@ export function parsePolarEquationString(eq_str) {
     console.log(`Failed to parse polar equation: ${error}`);
     return null;
   }
-  var error_func = function (x, y) { return Math.abs(left_eq(x, y) - right_eq(x, y)); };
+  // Compare real parts only after evaluating each complete side of the equation.
+  var error_func = function (x, y) { return Math.abs(math.re(left_eq(x, y)) - math.re(right_eq(x, y))); };
 
   return error_func;
 }
@@ -282,7 +283,8 @@ export function parseEquationString(eq_str) {
     console.log(`Error parsing equation: ${error}`);
     return null;
   }
-  var error_func = function (x, y) { return Math.abs(left_eq(x, y) - right_eq(x, y)); };
+  // Compare real parts only after evaluating each complete side of the equation.
+  var error_func = function (x, y) { return Math.abs(math.re(left_eq(x, y)) - math.re(right_eq(x, y))); };
 
   return error_func;
 }
