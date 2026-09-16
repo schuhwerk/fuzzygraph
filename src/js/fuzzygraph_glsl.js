@@ -6,6 +6,7 @@ const math = create(all);
 
 // import { evaluate_cmap } from './js-colormaps.js';
 import { getMatplotlibColormap } from './ga_color.js';
+import { compileEquationToGLSL, COMPLEX_GLSL } from './equation_glsl.js';
 
 export const ZOOM_RATE = 1.5;
 export const MAX_FUZZY = 200;
@@ -392,76 +393,8 @@ ${smoothLogic}
 }`;
 }
 
-function nodeToGLSL(node) {
-  switch (node.type) {
-    case 'ConstantNode':
-      return glslNumber(node.value);
-    case 'SymbolNode': {
-      const name = node.name;
-      if (name === 'x' || name === 'y' || name === 'r' || name === 't') return name;
-      if (name === 'pi' || name === 'PI') return '3.141592653589793';
-      if (name === 'e' || name === 'E') return '2.718281828459045';
-      throw new Error(`Unsupported symbol ${name} in equation`);
-    }
-    case 'ParenthesisNode':
-      return `(${nodeToGLSL(node.content)})`;
-    case 'UnaryMinusNode':
-      return `(-${nodeToGLSL(node.args[0])})`;
-    case 'OperatorNode': {
-      const op = node.op;
-      if (op === '^') {
-        const exponent = node.args[1];
-        if (exponent.type !== 'ConstantNode' || !Number.isInteger(Number(exponent.value))) {
-          throw new Error('Complex powers require CPU evaluation.');
-        }
-        return `pow(${nodeToGLSL(node.args[0])}, ${nodeToGLSL(node.args[1])})`;
-      }
-      if (node.args.length === 1) {
-        return `(${op}${nodeToGLSL(node.args[0])})`;
-      }
-      const left = nodeToGLSL(node.args[0]);
-      const right = node.args[1] ? nodeToGLSL(node.args[1]) : '';
-      return `(${left} ${op} ${right})`;
-    }
-    case 'FunctionNode': {
-      const fnName = node.name;
-      // Float-only shaders cannot preserve complex intermediate values. Let mathjs
-      // evaluate these expressions on the CPU before taking their real parts.
-      if (['sqrt', 'log', 'ln', 'asin', 'acos', 'pow'].includes(fnName)) {
-        throw new Error(`${fnName} requires complex-aware CPU evaluation.`);
-      }
-      const args = node.args.map(nodeToGLSL).join(', ');
-      const fnMap = {
-        'sin': 'sin', 'cos': 'cos', 'tan': 'tan', 'asin': 'asin', 'acos': 'acos', 'atan': 'atan',
-        'atan2': 'atan', 'log': 'log', 'ln': 'log', 'exp': 'exp', 'sqrt': 'sqrt', 'abs': 'abs',
-        'min': 'min', 'max': 'max', 'pow': 'pow'
-      };
-      if (fnMap[fnName]) {
-        return `${fnMap[fnName]}(${args})`;
-      }
-      throw new Error(`Unsupported function ${fnName} in equation`);
-    }
-    default:
-      throw new Error(`Unsupported AST node ${node.type}`);
-  }
-}
-
-function equationToGLSL(eqStr) {
-  const delimiter = eqStr.includes('≈') ? '≈' : '=';
-  const parts = eqStr.split(delimiter);
-  if (parts.length !== 2) {
-    throw new Error('Equation must contain a single equals sign.');
-  }
-  const [left, right] = parts;
-  const leftAst = math.parse(left);
-  const rightAst = math.parse(right);
-  const leftExpr = nodeToGLSL(leftAst);
-  const rightExpr = nodeToGLSL(rightAst);
-  return `abs((${leftExpr}) - (${rightExpr}))`;
-}
-
 function buildEvalShader(eqStr, isPolar) {
-  const expr = equationToGLSL(eqStr);
+  const compiled = compileEquationToGLSL(eqStr);
   const polarPrelude = isPolar ? `
   float r = length(vec2(x, y));
   float t = atan(y, x);
@@ -474,9 +407,11 @@ out vec4 outColor;
 uniform vec2 uResolution;
 uniform vec4 uBounds;
 uniform vec2 uRotation;
+${COMPLEX_GLSL}
 float evalEquation(float x, float y) {
 ${polarPrelude}
-  return ${expr};
+${compiled.statements}
+  return ${compiled.expression};
 }
 void main() {
   vec2 frag = gl_FragCoord.xy;
