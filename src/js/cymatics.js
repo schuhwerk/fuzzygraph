@@ -30,6 +30,14 @@ export function sinc(point, amplitude, frequency, phase = 0) {
     );
 }
 
+export function sine(point, amplitude, frequency, phase = 0) {
+    const { x, y } = point;
+    return (
+        `${amplitude} * sin( ${frequency} * 2 * pi * ` +
+        `((x-(${x}))^2 + (y-(${y}))^2)^(1/2) + ${phase})`
+    );
+}
+
 export function cymatics_equation_generator(
     numPoints,
     distance,
@@ -37,8 +45,14 @@ export function cymatics_equation_generator(
     frequency,
     phase = 0,
     combineOperator = '+',
-    rotateRadians = 0
+    rotateRadians = 0,
+    waveform = 'sinc'
 ) {
+    // Both waveforms use cycles per coordinate unit and phase in radians.
+    if (waveform !== 'sinc' && waveform !== 'sine') {
+        throw new Error(`Unknown waveform: ${waveform}. Expected sinc or sine.`);
+    }
+    const resonatorExpression = waveform === 'sine' ? sine : sinc;
     const resonatorPoints = uniformly_distributed_points(
         numPoints,
         distance,
@@ -46,11 +60,10 @@ export function cymatics_equation_generator(
     );
 
     const resonators = resonatorPoints.map((pt) =>
-        sinc(pt, amplitude, frequency, phase)
+        resonatorExpression(pt, amplitude, frequency, phase)
     );
 
     let eqStr = resonators.join(` ${combineOperator} `);
     eqStr += ' = 0';
     return eqStr;
 }
-

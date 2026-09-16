@@ -1030,7 +1030,7 @@
                 &times;
             </button>
 
-            <h2 class="text-xl font-semibold mb-4">FuzzyGraph v4.5.10</h2>
+            <h2 class="text-xl font-semibold mb-4">FuzzyGraph v4.6.0</h2>
             <p>FuzzyGraph is the world's first <a href="https://en.wikipedia.org/wiki/Fuzzy_logic" class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">fuzzy</a> (non-binary) graphing calculator. FuzzyGraph is also free and <a href="https://github.com/calebmadrigal/fuzzygraph" class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">open-source</a>.</p>
             <br />
             <p>Conventional graphing apps show where the LEFT and RIGHT side of the equation are EXACTLY equal. By
@@ -1443,6 +1443,21 @@
                             <p class="mt-1 text-xs text-gray-500">
                                 π/2 (~1.571) = 90° rotation
                             </p>
+                            <div class="mt-4">
+                                <label
+                                    for="waveformInput"
+                                    class="block text-sm font-medium text-gray-600"
+                                    >Waveform</label
+                                >
+                                <select
+                                    id="waveformInput"
+                                    name="waveformInput"
+                                    class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                >
+                                    <option value="sinc">Sinc</option>
+                                    <option value="sine">Sine</option>
+                                </select>
+                            </div>
                         </div>
 
                         <!-- Canvas visualization -->
@@ -1798,7 +1813,8 @@
             cyFrequency: 'frequency',
             cyPhase: 'phase',
             cyCombineOperator: 'combineOperator',
-            cyRotateRadians: 'rotateRadians'
+            cyRotateRadians: 'rotateRadians',
+            cyWaveform: 'waveform'
         };
         const cymaticsConfig = map({
             numResonators: 2,
@@ -1808,6 +1824,7 @@
             phase: 0.0,
             combineOperator: '+',
             rotateRadians: 0,
+            waveform: 'sinc',
         });
         const unmodifiedCymaticsEquation = atom(false);
 
@@ -1992,7 +2009,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'FuzzyGraph_v4.5.10.html';
+            a.download = 'FuzzyGraph_v4.6.0.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -3574,7 +3591,12 @@
                     hasAny = true;
                 }
             }
-            return hasAny ? mapped : null;
+            if (!hasAny) return null;
+            // Older saved images and links have no waveform; they used sinc.
+            if (mapped.waveform !== 'sine' && mapped.waveform !== 'sinc') {
+                mapped.waveform = 'sinc';
+            }
+            return mapped;
         }
 
         function getAppConfig() {
@@ -3875,7 +3897,8 @@
             cfg.frequency,
             cfg.phase,
             cfg.combineOperator,
-            cfg.rotateRadians
+            cfg.rotateRadians,
+            cfg.waveform
         );
 
         return eqStr;
@@ -4032,6 +4055,7 @@
         const phaseInput = document.getElementById('phaseInput');
         const combineInput = document.getElementById('combineOperatorInput');
         const rotateInput = document.getElementById('rotateRadiansInput');
+        const waveformInput = document.getElementById('waveformInput');
 
         // Initialize inputs from store
         const initial = cymaticsConfig.get();
@@ -4042,6 +4066,7 @@
         phaseInput.value = initial.phase;
         combineInput.value = initial.combineOperator;
         rotateInput.value = initial.rotateRadians;
+        waveformInput.value = initial.waveform;
 
         // Sync modal visibility with store
         showCymaticsModal.subscribe((isOpen) => {
@@ -4096,9 +4121,13 @@
         rotateInput.addEventListener('input', (e) => {
             cymaticsConfig.setKey('rotateRadians', Number(e.target.value || 0));
         });
+        waveformInput.addEventListener('change', (e) => {
+            cymaticsConfig.setKey('waveform', e.target.value);
+        });
 
         // Whenever layout-related config changes, redraw canvas
         cymaticsConfig.subscribe((cfg) => {
+            waveformInput.value = cfg.waveform;
             drawResonatorPointsOnCanvas('resonatorCanvas', cfg);
         });
 
