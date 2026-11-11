@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy Graph</title>
+    <link rel="icon" href="/favicon.png">
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 text-white h-16 fixed w-full top-0 left-0 z-50">
+        <div class="flex items-center justify-between h-full">
+            <div class="flex items-center">
+
+                <!-- Logo -->
+                <div class="h-fit flex">
+                    <div class="ml-2">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="70mm" height="15mm" viewBox="0 0 70 15"
+                             preserveAspectRatio="xMidYMid meet" class="w-full h-full">
+
+                            <defs>
+                                <filter id="fg-blur" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="1.0"/>
+                                </filter>
+                            </defs>
+
+                            <text x="2" y="10" font-family="Arial Black" font-size="9"
+                                    stroke="white" fill="white" stroke-width="0.26"
+                                    filter="url(#fg-blur)" opacity="1">
+                                <tspan>Fuzzy</tspan>
+                                <tspan dx="0.8">Graph</tspan>
+                            </text>
+
+                            <text x="2" y="10" font-family="Arial Black" font-size="9"
+                                    stroke="white" fill="white" stroke-width="0.26">
+                                <tspan>Fuzzy</tspan>
+                                <tspan dx="0.8">Graph</tspan>
+                            </text>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <button id="downloadFuzzyGraphBtn" data-tooltip="Download offline copy of FuzzyGraph"
+                        class="hidden md:flex text-white hover:bg-gray-700 items-center py-3 rounded tooltip-button h-14">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:!flex space-x-4">
+
+                    <button id="showShareButton" data-tooltip="Generates a shareable link to this graph"
+                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
+                        <span class="inline text-gray-200 hover:text-gray-300">Share</span>
+                        <svg class="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 71.335 351.263 C 71.335 351.263 220.824 546.123 425.655 354.919" id="object-0"/>
+                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 244.441 337.303 L 247.495 57.542" id="object-1"/>
+                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 245.927 57.667 C 245.927 57.667 233.676 153.919 163.023 157.325" id="object-2"/>
+                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 50%; stroke-width: 40px;" d="M 324.455 177.087 C 324.455 177.087 314.941 85.607 244.288 82.201" transform="matrix(-1, 0, 0, -1, 4.432068, -20.892017)" id="object-3"/>
+                        </svg>
+                    </button>
+
+                    <button id="showSaveButton" data-tooltip="Saves this graph as an image file with the graph data built in"
+                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
+                        <span class="inline text-gray-200">Save</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                    </button>
+
+                    <button id="showOpenButton" data-tooltip="Only opens FuzzyGraph-created image files"
+                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
+                        <span class="inline text-gray-200">Open</span>
+                        <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18Z" fill="#000000"/>
+                        </svg>
+                    </button>
+
+                    <button id="showHelpButton"
+                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700">
+                        <span class="inline text-gray-200">Help</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                        </svg>
+                    </button>
+
+                </nav>
+
+                <!-- Mobile menu button -->
+                <button id="mobileMenuButton" class="md:hidden p-2 mr-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobileMenu" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 transform -translate-y-2"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform -translate-y-2"
+            class="hidden absolute top-16 right-0 w-32 bg-gray-800 shadow-lg md:hidden rounded-bl-lg">
+            <div class="px-2 py-3 space-y-2">
+
+                <button id="mobileShowShareButton"
+                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
+                    <span class="inline text-gray-200 w-12">Share</span>
+                    <svg class="w-5 h-5 block" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 71.335 351.263 C 71.335 351.263 220.824 546.123 425.655 354.919" id="object-0"/>
+                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 244.441 337.303 L 247.495 57.542" id="object-1"/>
+                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 245.927 57.667 C 245.927 57.667 233.676 153.919 163.023 157.325" id="object-2"/>
+                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 50%; stroke-width: 40px;" d="M 324.455 177.087 C 324.455 177.087 314.941 85.607 244.288 82.201" transform="matrix(-1, 0, 0, -1, 4.432068, -20.892017)" id="object-3"/>
+                    </svg>
+                </button>
+
+                <button id="mobileShowSaveButton"
+                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
+                    <span class="inline text-gray-200 w-12">Save</span>
+                    <svg class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                </button>
+
+                <button id="mobileShowOpenButton"
+                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
+                    <span class="inline text-gray-200 w-12">Open</span>
+                    <svg class="w-5 h-5 block" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18Z" fill="#000000"/>
+                    </svg>
+                </button>
+
+                <button id="mobileShowHelpButton"
+                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
+                    <span class="inline text-gray-200 w-12">Help</span>
+                    <svg class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                    </svg>
+                </button>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <!-- <div class="flex flex-col md:flex-row pt-16 bg-gray-300"> -->
+    <div class="fixed inset-x-0 top-16 bottom-0 flex flex-col md:flex-row bg-gray-300">
+        <!-- Main Content -->
+        <main id="overCanvasControls" class="flex-1 order-1 md:order-2 transition-all duration-300 relative">
+            <div class="absolute top-4 right-4 z-10 flex flex-col gap-0.5">
+                <button id="zoomInButton"
+                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-t-lg shadow-lg transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                </button>
+                <button id="zoomOutButton"
+                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-b-lg shadow-lg transition-colors duration-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
+                    </svg>
+                </button>
+
+                <button id="gotoButton"
+                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center mt-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9" stroke-width="2" />
+                        <circle cx="12" cy="12" r="4" stroke-width="2" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3" />
+                    </svg>
+                </button>
+
+                <button id="homeButton"
+                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 9.5l9-7 9 7M4 10v10a1 1 0 001 1h5V14h4v7h5a1 1 0 001-1V10" />
+                    </svg>
+                </button>
+
+            </div>
+            <!-- Sidebar Show Button (Desktop) -->
+            <button id="openControlPanelButton"
+                class="hidden md:!flex items-center justify-center w-6 h-12 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white rounded-r fixed left-0 top-1/2 transform -translate-y-1/2 transition-opacity duration-300">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+
+            <canvas id="mainCanvas" class="w-full h-[calc(100dvh-4rem)] md:h-[calc(100dvh-4rem)] bg-white">
+            </canvas>
+
+            <div id="hoverMsgDiv" class="coords">
+                <span id="hoverMsg">Loading...</span>
+            </div>
+        </main>
+
+        <!-- Side Control Panel - Fixed to bottom on mobile, left side on desktop -->
+        <aside id="controlPanel"
+            class="bg-gray-300 text-gray-800 w-full md:w-64 fixed order-2 md:order-1 z-40 bottom-0 md:bottom-auto md:top-16 md:left-0">
+            <!-- Top Control Bar -->
+            <div class="bg-gray-400 text-white p-2 flex justify-between items-center">
+                <button id="hideControlPanelButton" class="p-1 hover:bg-gray-700 rounded">
+                    <svg class="w-5 h-5 rotate-90 md:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19l7-7-7-7" />
+                    </svg>
+                </button>
+
+                <div id="advancedModeToggle" class="flex items-center gap-3 select-none mr-2">
+                    <!-- Dynamic Label -->
+                    <span id="modeLabel" class="text-xs">Basic</span>
+                  
+                    <!-- Switch -->
+                    <button
+                      id="modeToggle"
+                      type="button"
+                      role="switch"
+                      aria-checked="false"
+                      aria-labelledby="mode-label"
+                      class="relative inline-flex h-6 w-12 items-center bg-gray-300 transition-colors duration-200 
+                             focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
+                    >
+                      <span class="sr-only">Toggle Basic/Advanced</span>
+                  
+                      <!-- Track border -->
+                      <span aria-hidden="true" class="absolute inset-0 border border-gray-500/50 pointer-events-none rounded-none"></span>
+                  
+                      <!-- Thumb -->
+                      <span
+                        id="modeThumb"
+                        class="pointer-events-none inline-block h-4 w-4 translate-x-1 bg-gray-50 transition-all duration-200 
+                               will-change-transform rounded-none shadow-md"
+                      ></span>
+                    </button>
+                </div>
+
+            </div>
+            <!-- Sidebar Content -->
+            <div class="p-4 flex flex-col space-y-8 max-h-[30vh] md:max-h-[calc(100vh-7rem)] overflow-y-auto">
+                <!-- Equation Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
+                      <span>Equation</span>
+                      <button id="equationHelpButton"
+                        class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 
+                               2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
+                               -.542.104-.994.54-.994 1.093m0 3h.01
+                               M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                        </svg>
+                      </button>
+                    </h3>
+
+                    <div style="position:relative; max-width:100%;">
+                        <textarea id="equationInput" class="w-full h-[74px] p-2 border border-gray-300 rounded-md resize-y"
+                            oninput="this.value=this.value.toLowerCase()" autocapitalize="off" spellcheck="false"
+                            placeholder="y=x">
+                        </textarea>
+
+                        <button id="openEquationModalButton" type="button" title="Open equation editor"
+                        class="m-1"
+                        style="position:absolute; right:6px; bottom:30px; height:20px; width:20px; border-radius:4px;
+                                border:0px; background:#fff; cursor:pointer; font-size:18px; line-height:1; padding:0;">
+                        ⤢
+                        </button>
+
+                        <button id="mathBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mathPopover"
+                        title="Math functions (⌘/Ctrl+K)"
+                        class="m-1"
+                        style="position:absolute; right:6px; bottom:6px; height:20px; width:20px; border-radius:4px;
+                                border:0px; background:#fff; cursor:pointer; font-size:18px; line-height:1; padding:0;">
+                        +
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Drag or scroll over any number to change it. Shift: finer, Ctrl: coarser.
+                    </p>
+
+                </div>
+
+                <!-- Controls Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
+                        <span>Controls</span>
+                        <button id="controlsHelpButton"
+                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 
+                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
+                                -.542.104-.994.54-.994 1.093m0 3h.01
+                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                            </svg>
+                      </button>
+                    </h3>
+                    <!-- Fuzzy Level Slider -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">
+                            Fuzzy Level: <span id="fuzzyLevelDisplay"></span>
+                        </label>
+                        <!-- <input id="fuzzyInput" type="range" min="0" max="100"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"> -->
+
+                            <input
+                            id="fuzzyInput"
+                            type="range"
+                            min="0"
+                            max="100"
+                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
+                              [&::-webkit-slider-thumb]:appearance-none
+                              [&::-webkit-slider-thumb]:w-4
+                              [&::-webkit-slider-thumb]:h-4
+                              [&::-webkit-slider-thumb]:bg-gray-800
+                              [&::-webkit-slider-thumb]:rounded-none
+                              [&::-webkit-slider-thumb]:cursor-pointer
+                          
+                              [&::-moz-range-thumb]:w-4
+                              [&::-moz-range-thumb]:h-4
+                              [&::-moz-range-thumb]:bg-gray-800
+                              [&::-moz-range-thumb]:border-0
+                              [&::-moz-range-thumb]:rounded-none
+                            "
+                          />
+                        <label for="fuzzyFunctionSelect" class="block text-sm font-medium text-gray-700 pt-1">
+                            Fuzzy Function
+                        </label>
+                        <select id="fuzzyFunctionSelect"
+                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"></select>
+                        <input id="fuzzyFunctionInput" type="text" maxlength="500"
+                            autocapitalize="off" autocomplete="off" spellcheck="false"
+                            aria-describedby="fuzzyFunctionError"
+                            class="w-full px-2 py-1 font-mono text-sm border border-gray-300 rounded-md"
+                            placeholder="(v + 0.000001)^f" />
+                        <p id="fuzzyFunctionError" class="hidden text-xs text-red-600"></p>
+                    </div>
+
+                    <!-- Axes Toggle Switch -->
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-sm font-medium text-gray-700">Show Axes</span>
+                        <button
+                            type="button"
+                            id="axesToggle"
+                            role="switch"
+                            aria-checked="true"
+                            class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
+                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
+                        >
+                            <span class="sr-only">Toggle axes</span>
+                            <span
+                                id="axesOnSlider"
+                                class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
+                                       will-change-transform rounded-none shadow-md"
+                            ></span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Advanced Controls Section -->
+                <div id="advancedControlsSection" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
+                        <span>Advanced Controls</span>
+                        <button id="advancedHelpButton"
+                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2
+                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
+                                -.542.104-.994.54-.994 1.093m0 3h.01
+                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                            </svg>
+                      </button>
+                    </h3>
+
+                    <div>
+                        <label for="minOverrideInput" class="block text-sm font-medium text-gray-600">
+                          Min Override (min: <span id="minDisplay" class="text-xs">0</span>)
+                        </label>
+
+                        <div class="mt-1 relative">
+                          <!-- Input -->
+                          <input
+                            type="text"
+                            inputmode="decimal"
+                            id="minOverrideInput"
+                            name="minOverrideInput"
+                            class="no-spinner w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm
+                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+
+                          <!-- Toggle inside input (small advanced-style) -->
+                          <button
+                            type="button"
+                            id="minOverrideToggle"
+                            class="absolute inset-y-0 right-2 my-auto h-5 w-9 flex items-center px-0
+                                   bg-gray-800 transition-colors duration-200 rounded-none"
+                            aria-pressed="false"
+                            tabindex="-1"
+                          >
+                            <span
+                              class="knob inline-block h-3 w-3 translate-x-5 bg-gray-50 shadow transform
+                                     transition-transform duration-200 will-change-transform rounded-none"
+                            ></span>
+                          </button>
+                        </div>
+                      </div>
+
+                    <!-- Max Override -->
+                    <div>
+                        <label for="maxOverrideInput" class="block text-sm font-medium text-gray-600 mt-2">
+                        Max Override (max: <span id="maxDisplay" class="text-xs">0</span>)
+                        </label>
+
+                        <div class="mt-1 relative">
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            id="maxOverrideInput"
+                            name="maxOverrideInput"
+                            class="no-spinner w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+
+                        <!-- Toggle inside input (small advanced-style) -->
+                        <button
+                            type="button"
+                            id="maxOverrideToggle"
+                            class="absolute inset-y-0 right-2 my-auto h-5 w-9 flex items-center px-0
+                                bg-gray-800 transition-colors duration-200 rounded-none"
+                            aria-pressed="false"
+                            tabindex="-1"
+                        >
+                            <span
+                            class="knob inline-block h-3 w-3 translate-x-5 bg-gray-50 shadow transform
+                                    transition-transform duration-200 will-change-transform rounded-none"
+                            ></span>
+                        </button>
+                        </div>
+                    </div>
+
+                    <!-- Rotation (degrees) -->
+                    <div class="mt-2">
+                        <label for="rotationDegreesInput" class="block text-sm font-medium text-gray-600">
+                            Rotation (degrees)
+                        </label>
+                        <input
+                            type="number"
+                            inputmode="decimal"
+                            step="any"
+                            id="rotationDegreesInput"
+                            name="rotationDegreesInput"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+
+                </div>
+
+                <!-- Color Section -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
+                        <span>Color Map</span>
+                        <button id="colorMapHelpButton"
+                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 
+                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
+                                -.542.104-.994.54-.994 1.093m0 3h.01
+                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
+                            </svg>
+                      </button>
+                    </h3>
+
+                    <!-- Color Map Dropdown -->
+                    <div class="relative inline-block max-w-full sm:w-64 w-full">
+                        <select id="colorMapSelect" name="colors"
+                            class="block w-full min-w-0 truncate appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-10 text-base text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                        <!-- Dropdown arrow -->
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Reverse Color Switch -->
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-sm font-medium text-gray-700">Reverse Color</span>
+                        <button
+                            id="reverseColorButton"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-6 w-12 items-center bg-gray-500 transition-colors duration-200
+                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
+                        >
+                            <span class="sr-only">Toggle color reversal</span>
+                            <span
+                                id="reverseColorSlider"
+                                class="pointer-events-none inline-block h-4 w-4 translate-x-1 bg-gray-50 transition-all duration-200
+                                       will-change-transform rounded-none shadow-md"
+                            ></span>
+                        </button>
+                    </div>
+
+                    <!-- Invert Color Switch -->
+                    <div class="flex items-center justify-between mt-4">
+                        <span class="text-sm font-medium text-gray-700">Invert Color</span>
+                        <button
+                            id="invertColorButton"
+                            type="button"
+                            role="switch"
+                            aria-checked="true"
+                            class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
+                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
+                        >
+                            <span class="sr-only">Toggle color inversion</span>
+                            <span
+                                id="invertColorSlider"
+                                class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
+                                       will-change-transform rounded-none shadow-md"
+                            ></span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Advanced Color Section -->
+                <div id="advancedColorSection" class="hidden mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
+                        <span>Advanced Color</span>
+                    </h3>
+
+                    <!-- Color Start -->
+                    <div class="mt-2">
+                        <label for="colorStartInput" class="block text-sm font-medium text-gray-600">
+                            Color Start
+                        </label>
+                        <input
+                            type="number"
+                            id="colorStartInput"
+                            name="colorStartInput"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+
+                    <!-- Color Cycles -->
+                    <div class="mt-2">
+                        <label for="colorCyclesInput" class="block text-sm font-medium text-gray-600">
+                            Color Cycles
+                        </label>
+                        <input
+                            type="number"
+                            id="colorCyclesInput"
+                            name="colorCyclesInput"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+
+                    <!-- Hue Shift -->
+                    <div class="mt-2">
+                        <label for="hueShiftInput" class="block text-sm font-medium text-gray-600">
+                            Hue Shift (degrees)
+                        </label>
+                        <input
+                            type="number"
+                            id="hueShiftInput"
+                            name="hueShiftInput"
+                            min="-180"
+                            max="180"
+                            step="1"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+
+                    <!-- Saturation Adjustment -->
+                    <div class="mt-2">
+                        <label for="saturationAdjustInput" class="block text-sm font-medium text-gray-600">
+                            Saturation (% change)
+                        </label>
+                        <input
+                            type="number"
+                            id="saturationAdjustInput"
+                            name="saturationAdjustInput"
+                            min="-100"
+                            max="100"
+                            step="1"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+
+                    <!-- Luminosity Adjustment -->
+                    <div class="mt-2">
+                        <label for="luminosityAdjustInput" class="block text-sm font-medium text-gray-600">
+                            Luminosity (% change)
+                        </label>
+                        <input
+                            type="number"
+                            id="luminosityAdjustInput"
+                            name="luminosityAdjustInput"
+                            min="-100"
+                            max="100"
+                            step="1"
+                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                    </div>
+                </div>
+
+                <div class="mt-16 text-center flex flex-col justify-end">
+                    <span>≈ Built by <a href="https://github.com/calebmadrigal/fuzzygraph"
+                            class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">
+                            Caleb Madrigal
+                        </a>
+                        ≈</span>
+                </div>
+
+            </div>
+    </div>
+    </aside>
+
+    <!-- Mobile Show Button (when panel is hidden) -->
+    <button id="mobileShowControlPanelButton"
+        class="md:hidden fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white px-4 py-2 rounded-t transition-all duration-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+        </svg>
+    </button>
+    </div>
+
+    <!-- Share modal background -->
+    <div id="shareModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="shareModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Share</h2>
+            <div class="w-full max-w-md p-4">
+                <div class="relative">
+                    <input type="text" readonly id="shareUrlInput"
+                        class="w-full p-2 pr-20 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="copyUrlButton"
+                        class="absolute right-1 top-1/2 -translate-y-1/2 bg-gray-800 text-white px-3 py-1 rounded-lg hover:bg-gray-700 transition duration-200">
+                        Copy
+                    </button>
+
+                </div>
+                <div id="copytooltip" style="display: none;">Copied!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save modal background -->
+    <div id="saveModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <!-- Modal content -->
+        <div x-transition class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="saveModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Save Image</h2>
+
+            <div class="bg-white w-full max-w-md">
+                <!-- Size Inputs -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Size</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="width" class="block text-sm font-medium text-gray-600">Width (pixels)</label>
+                            <input 
+                                type="number" 
+                                id="saveWidthInput" 
+                                name="saveWidthInput" 
+                                min="0" 
+                                step="1" 
+                                required 
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter width"
+                            >
+                        </div>
+                        <div>
+                            <label for="height" class="block text-sm font-medium text-gray-600">Height (pixels)</label>
+                            <input 
+                                type="number" 
+                                id="saveHeightInput" 
+                                name="saveHeightInput" 
+                                min="0" 
+                                step="1" 
+                                required 
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter height"
+                            >
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Center Inputs -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Center</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="x" class="block text-sm font-medium text-gray-600">X (decimal)</label>
+                            <input 
+                                type="number" 
+                                id="saveCenterXInput" 
+                                name="saveCenterXInput" 
+                                step="any" 
+                                required 
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter x coordinate"
+                            >
+                        </div>
+                        <div>
+                            <label for="y" class="block text-sm font-medium text-gray-600">Y (decimal)</label>
+                            <input 
+                                type="number" 
+                                id="saveCenterYInput" 
+                                name="saveCenterYInput" 
+                                step="any" 
+                                required 
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter y coordinate"
+                            >
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- yHeight Input -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Zoom</h3>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="saveZoomInput" class="block text-sm font-medium text-gray-600">Zoom (decimal)</label>
+                            <input
+                                type="number"
+                                id="saveZoomInput"
+                                name="saveZoomInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter zoom"
+                            >
+                        </div>
+                        <div>
+                            <label for="yHeight" class="block text-sm font-medium text-gray-600">yHeight (decimal)</label>
+                            <input
+                                type="number"
+                                id="saveYHeightInput"
+                                name="saveYHeightInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter yHeight"
+                            >
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mb-4">
+                    <div class="grid grid-cols-2 gap-4 items-center">
+                        <!-- Show Axes -->
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium text-gray-700">Show Axes</span>
+                            <button
+                                type="button"
+                                id="saveAxesToggle"
+                                role="switch"
+                                aria-checked="true"
+                                class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
+                                       focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
+                            >
+                                <span class="sr-only">Toggle axes in saved image</span>
+                                <span
+                                    id="saveAxesOnSlider"
+                                    class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
+                                           will-change-transform rounded-none shadow-md"
+                                ></span>
+                            </button>
+                        </div>
+
+                        <!-- Save Image Button -->
+                        <div class="flex items-center justify-end">
+                            <button 
+                                type="button" 
+                                id="saveImageButton"
+                                class="px-8 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                            >
+                                <span class="inline text-gray-200 mr-2">Save Image</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- <p class="mb-4">Image save feature coming soon</p> -->
+
+        </div>
+    </div>
+    
+
+    <!-- Goto modal background -->
+    <div id="gotoModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <!-- Modal content -->
+        <div x-transition class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="gotoModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Goto</h2>
+
+            <div class="bg-white w-full max-w-md space-y-6">
+                <!-- Center Inputs -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Center</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="gotoCenterXInput" class="block text-sm font-medium text-gray-600">X (decimal)</label>
+                            <input
+                                type="number"
+                                id="gotoCenterXInput"
+                                name="gotoCenterXInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter x coordinate"
+                            >
+                        </div>
+                        <div>
+                            <label for="gotoCenterYInput" class="block text-sm font-medium text-gray-600">Y (decimal)</label>
+                            <input
+                                type="number"
+                                id="gotoCenterYInput"
+                                name="gotoCenterYInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter y coordinate"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zoom Input -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Zoom</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="gotoZoomInput" class="block text-sm font-medium text-gray-600">Zoom (decimal)</label>
+                            <input
+                                type="number"
+                                id="gotoZoomInput"
+                                name="gotoZoomInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter zoom"
+                            >
+                        </div>
+                        <div>&nbsp;</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                    <button
+                        type="button"
+                        id="gotoCancelButton"
+                        class="px-6 py-2 bg-gray-200 text-gray-800 font-semibold rounded-md shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        id="gotoSubmitButton"
+                        class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                    >
+                        Goto
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Open modal background -->
+    <div id="openModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <!-- Modal content -->
+        <div x-transition class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="openModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Open FuzzyGraph Image</h2>
+
+            <div class="mb-6">
+                <!-- File Upload Container -->
+                <div class="flex items-center space-x-4">
+                  <input
+                    id="pngInput"
+                    type="file"
+                    accept="image/png"
+                    class="block p-2 w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700 transition"
+                  />
+                </div>
+              
+                <!-- Result Display -->
+                <pre id="openResult" class="mt-4 rounded text-sm text-gray-200 dark:text-gray-700"></pre>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Help modal background -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="helpModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">FuzzyGraph</h2>
+            <p>FuzzyGraph is the world's first fuzzy (non-binary) graphing calculator. FuzzyGraph is also free and <a href="https://github.com/schuhwerk/fuzzygraph" class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">open-source</a>.</p>
+            <br />
+            <p>Conventional graphing apps show where the LEFT and RIGHT side of the equation are EXACTLY equal. By
+                comparison, FuzzyGraph shows the error gradient of the equation. Instead of collapsing the evaluation
+                into either
+                TRUE or FALSE, it instead, shows the "shades of gray", choosing colors based on how near or far both
+                sides are to being equal at every point in the visible area.</p>
+            <br />
+            <p>Another way to think about it is this: fuzzy graphs are graphs of approximate equations (≈).</p>
+            <br />
+            <p class="text-right">Project by math artist Caleb Madrigal.</p>
+        </div>
+    </div>
+
+    <!-- Equation help modal -->
+    <div id="equationHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="equationHelpModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Equation Help</h2>
+            <div class="w-full max-w-md p-4">
+                <div>
+                    <p>Equations must have an <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">=</span> sign, and can use variables <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">x</span>  and <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">y</span>. For example: <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">y = x^2</span>.</p>
+                    <br />
+                    <a class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200"
+                       href="./examples.html">View Examples</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls help modal -->
+    <div id="controlsHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="controlsHelpModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Controls Help</h2>
+            <div class="w-full max-w-md p-4">
+                <div>
+                    <h3 class="font-bold">Fuzzy Level</h3>
+                    <p>The <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Fuzzy Level</span> expands or squishes the equation so that the peaks and valleys are closer together, or further apart. This has an effect on how the colors manifest.</p>
+                    <br />
+                    <h3 class="font-bold">Fuzzy Function</h3>
+                    <p>The function that turns each pixel's error into a color position. <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">v</span> is the error (0 means the equation is exactly true) and <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">f</span> is the Fuzzy Level as a fraction (30% is 0.3). The default is <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">(v + 0.000001)^f</span>. Pick a preset or type your own using the same math functions as equations, e.g. <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">log(v + 0.01)</span>. At a Fuzzy Level of 0% the graph is drawn as plain lines and the function is not used.</p>
+                    <br />
+                    <h3 class="font-bold">Show Axes</h3>
+                    <p>Turns the X and Y Axes on or off</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Color Map help modal -->
+    <div id="colorMapHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="colorMapHelpModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Color Map Help</h2>
+            <div class="w-full max-w-md p-4">
+                <div>
+                    <p>There are two parts: the <span class="font-bold">data</span> and the <span class="font-bold">representation</span>.</p>
+                    <br />
+                    <p><span class="font-bold">The Equation</span> defines the data.</p>
+                    <p><span class="font-bold">The Color Map</span> defines which colors are used to represent which values. For example, in the <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">rainbow</span> color map, the <span class="italic">lowest</span> value maps to <span class="text-purple-500">purple</span>, and the <span class="italic">highest</span> value maps to <span class="text-red-500">red</span>. If <span class="font-bold">Invert Color</span> is on, then the <span class="italic">lowest</span> value maps to <span class="text-red-500">red</span> and the <span class="italic">highest</span> value maps to <span class="text-purple-500">purple</span>.</p>
+                    <br />
+                    <p>The same equation/data can be represented in many different ways. <span class="font-bold">There is no one right representation.</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced help modal -->
+    <div id="advancedHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+
+            <!-- X button -->
+            <button id="advancedHelpModalX"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Advanced Help</h2>
+            <div class="w-full max-w-md p-4">
+                <div>
+                    <h3 class="font-bold">Min Override</h3>
+                    <p>Since FuzzyGraph takes the absolute value of the error, the minimum value is typically 0, and usually does not need to be changed.</p>
+                    <br />
+                    <h3 class="font-bold">Max Override</h3>
+                    <p>Just as a bright light (like the sun) can "wash out" everything else in a photo, so also a section of really high error can wash out the rest of the mathematical topography (which hides many of the details). So it is often valuable to clamp down on the max value by setting a "Max Override".</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Math Input Popover -->
+    <div id="mathPopover" role="dialog" aria-label="Insert math"
+        style="position:absolute; top:100%; right:0; margin-top:6px; z-index:1000; max-width:min(560px, 96vw);
+                                                background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.12); padding:10px; display:none;">
+        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
+            <input id="mathFilter" type="text" placeholder="Filter (e.g., sin, sqrt, log)…"
+                style="flex:1; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
+            <button id="closePopover" type="button" aria-label="Close"
+                style="height:32px; width:32px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">✕</button>
+        </div>
+
+        <!-- Action grid: now with top-row keys -->
+        <div id="fnGrid"
+            style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; max-height:346px; overflow:auto;">
+            <!-- Top row: basic variable and operator keys -->
+            <button class="fn" id="clearEquationBtn" title="C">CLEAR</button>
+            <button class="fn" data-insert="y" title="y">y</button>
+            <button class="fn" data-insert="=" title="equals">=</button>
+            <button class="fn" data-insert="x" title="x">x</button>
+            <button class="fn" data-insert="+" title="plus">+</button>
+            <button class="fn" data-insert="-" title="minus">−</button>
+            <button class="fn" data-insert="*" title="multiply">*</button>
+            <button class="fn" data-insert="/" title="divide">/</button>
+            <button class="fn" data-wrap-start="sqrt(" data-wrap-end=")" title="sqrt(x)">√(·)</button>
+            <button class="fn" data-insert="^2" title="square">^2</button>
+            <button class="fn" data-insert="^3" title="cube">^3</button>
+            <button class="fn" data-insert="^" title="power">x^y</button>
+
+            <!-- Trigonometric -->
+            <button class="fn" data-wrap-start="sin(" data-wrap-end=")" title="sin(x)">sin(·)</button>
+            <button class="fn" data-wrap-start="cos(" data-wrap-end=")" title="cos(x)">cos(·)</button>
+            <button class="fn" data-wrap-start="tan(" data-wrap-end=")" title="tan(x)">tan(·)</button>
+            <button class="fn" data-wrap-start="asin(" data-wrap-end=")" title="asin(x)">asin(·)</button>
+            <button class="fn" data-wrap-start="acos(" data-wrap-end=")" title="acos(x)">acos(·)</button>
+            <button class="fn" data-wrap-start="atan(" data-wrap-end=")" title="atan(x)">atan(·)</button>
+            <button class="fn" data-wrap-start="atan2(" data-wrap-end=", y)" title="atan2(x, y)">atan2(·,y)</button>
+
+            <!-- Hyperbolic -->
+            <button class="fn" data-wrap-start="sinh(" data-wrap-end=")" title="sinh(x)">sinh(·)</button>
+            <button class="fn" data-wrap-start="cosh(" data-wrap-end=")" title="cosh(x)">cosh(·)</button>
+            <button class="fn" data-wrap-start="tanh(" data-wrap-end=")" title="tanh(x)">tanh(·)</button>
+            <button class="fn" data-wrap-start="asinh(" data-wrap-end=")" title="asinh(x)">asinh(·)</button>
+            <button class="fn" data-wrap-start="acosh(" data-wrap-end=")" title="acosh(x)">acosh(·)</button>
+            <button class="fn" data-wrap-start="atanh(" data-wrap-end=")" title="atanh(x)">atanh(·)</button>
+
+            <!-- Advanced Roots & powers -->
+            <button class="fn" data-wrap-start="pow(" data-wrap-end=", 2)" title="pow(x, 2)">pow(·,2)</button>
+            <button class="fn" data-wrap-start="pow(" data-wrap-end=", y)" title="pow(x, y)">pow(·,y)</button>
+            <button class="fn" data-wrap-start="hypot(" data-wrap-end=", y)" title="hypot(x, y)">hypot(·,y)</button>
+
+            <!-- Exponentials & logs -->
+            <button class="fn" data-wrap-start="exp(" data-wrap-end=")" title="e^x">exp(·)</button>
+            <button class="fn" data-wrap-start="log(" data-wrap-end=")" title="natural log">ln(·)</button>
+            <button class="fn" data-wrap-start="log10(" data-wrap-end=")" title="log base 10">log10(·)</button>
+            <button class="fn" data-wrap-start="log(" data-wrap-end=", 2)" title="log base 2">log(·,2)</button>
+            <button class="fn" data-wrap-start="log(" data-wrap-end=", 10)" title="log base 10 (alt)">log(·,10)</button>
+            <button class="fn" data-wrap-start="log(" data-wrap-end=", b)" title="log base b">log(·,b)</button>
+
+            <!-- Rounding / misc numeric -->
+            <button class="fn" data-wrap-start="round(" data-wrap-end=", 2)" title="round(x, 2)">round(·,2)</button>
+            <button class="fn" data-wrap-start="floor(" data-wrap-end=")" title="floor(x)">floor(·)</button>
+            <button class="fn" data-wrap-start="ceil(" data-wrap-end=")" title="ceil(x)">ceil(·)</button>
+            <button class="fn" data-wrap-start="sign(" data-wrap-end=")" title="sign(x)">sign(·)</button>
+            <button class="fn" data-wrap-start="abs(" data-wrap-end=")" title="abs(x)">abs(·)</button>
+            <button class="fn" data-wrap-start="min(" data-wrap-end=", 1)" title="min(x, 1)">min(·,1)</button>
+            <button class="fn" data-wrap-start="max(" data-wrap-end=", 1)" title="max(x, 1)">max(·,1)</button>
+
+            <!-- Constants & punctuation -->
+            <button class="fn" data-insert="pi" title="π">pi</button>
+            <button class="fn" data-insert="e" title="Euler’s number">e</button>
+            <button class="fn" data-insert="(" title="left paren">(</button>
+            <button class="fn" data-insert=")" title="right paren">)</button>
+            <button class="fn" data-insert="," title="comma">,</button>
+            <button class="fn" data-insert=" " title="space">␠</button>
+
+            <!-- Equation generators -->
+            <button class="fn" id="openCymaticsModal" title="Digital Cymatics Equation Generator">ψ</button>
+            <button class="fn" id="openMandelbrotModal" title="Mandelbrot Generator">Mandelbrot</button>
+            <button class="fn" id="openJuliaModal" title="Julia Set Generator">Julia</button>
+        </div>
+
+        <div style="font-size:12px; color:#666; margin-top:8px;">
+            Tip: Select text first to wrap it, or place the cursor to insert. Open with <kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>,
+            close with <kbd>Esc</kbd>.
+        </div>
+    </div>
+    <!-- END of Math Input Popover -->
+
+    <!-- Equation Modal -->
+    <div
+        id="equationModal"
+        class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+        <div
+            class="relative bg-white rounded-lg shadow-lg p-8 max-w-4xl w-full max-h-[90vh] h-[70vh] overflow-hidden mx-4 flex flex-col"
+        >
+            <button
+                id="equationModalClose"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none"
+                type="button"
+            >
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">Equation</h2>
+
+            <div class="flex-1 mb-4">
+                <textarea
+                    id="equationModalTextarea"
+                    class="w-full h-full min-h-[320px] border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    spellcheck="false"
+                    autocapitalize="off"
+                ></textarea>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2 border-t border-gray-200">
+                <button
+                    id="equationModalCancel"
+                    class="px-4 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="button"
+                >
+                    Cancel
+                </button>
+                <button
+                    id="equationModalUpdate"
+                    class="px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="button"
+                >
+                    Update
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cymatics Modal -->
+    <div
+        id="cymaticsModal"
+        class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 ">
+        <!-- Modal content -->
+        <div
+            x-transition
+            class="relative bg-white rounded-lg shadow-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto mx-4"
+        >
+            <!-- X button -->
+            <button
+                id="cymaticsModalClose"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none"
+                type="button"
+            >
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">
+                Digital Cymatics Equation Generator
+            </h2>
+
+            <div class="bg-white w-full">
+                <!-- Resonator Settings -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">
+                        Resonator Settings
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                for="numResonatorsInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Number of Resonators</label
+                            >
+                            <input
+                                type="number"
+                                id="numResonatorsInput"
+                                name="numResonatorsInput"
+                                min="1"
+                                step="1"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                for="distanceInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Distance from Center</label
+                            >
+                            <input
+                                type="number"
+                                id="distanceInput"
+                                name="distanceInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wave Parameters -->
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">
+                        Wave Parameters
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label
+                                for="amplitudeInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Amplitude</label
+                            >
+                            <input
+                                type="number"
+                                id="amplitudeInput"
+                                name="amplitudeInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                for="frequencyInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Frequency</label
+                            >
+                            <input
+                                type="number"
+                                id="frequencyInput"
+                                name="frequencyInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label
+                                for="phaseInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Phase</label
+                            >
+                            <input
+                                type="number"
+                                id="phaseInput"
+                                name="phaseInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                for="combineOperatorInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Combine Operator</label
+                            >
+                            <select
+                                id="combineOperatorInput"
+                                name="combineOperatorInput"
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                            >
+                                <option value="+">+</option>
+                                <option value="-">-</option>
+                                <option value="*">*</option>
+                                <option value="/">/</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rotation & Visualization -->
+                <div class="mb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-gray-700">
+                                Rotation
+                            </h3>
+                            <label
+                                for="rotateRadiansInput"
+                                class="block text-sm font-medium text-gray-600"
+                                >Rotate (radians)</label
+                            >
+                            <input
+                                type="number"
+                                id="rotateRadiansInput"
+                                name="rotateRadiansInput"
+                                step="any"
+                                required
+                                class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <p class="mt-1 text-xs text-gray-500">
+                                π/2 (~1.571) = 90° rotation
+                            </p>
+                            <div class="mt-4">
+                                <label
+                                    for="waveformInput"
+                                    class="block text-sm font-medium text-gray-600"
+                                    >Waveform</label
+                                >
+                                <select
+                                    id="waveformInput"
+                                    name="waveformInput"
+                                    class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                >
+                                    <option value="sinc">Sinc</option>
+                                    <option value="sine">Sine</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Canvas visualization -->
+                        <div class="flex flex-col items-center">
+                            <h3 class="text-lg font-semibold mb-2 text-gray-700">
+                                Layout Preview
+                            </h3>
+                            <canvas
+                                id="resonatorCanvas"
+                                width="200"
+                                height="200"
+                                class="border border-gray-300 shadow-sm w-32 h-32 sm:w-48 sm:h-48"
+                            ></canvas>
+                            <p class="mt-1 text-xs text-gray-500">
+                                Points represent resonators (centered at 0,0).
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom buttons -->
+                <div class="mt-6 flex items-center justify-center pb-20 sm:pb-6">
+                    <button
+                        type="button"
+                        id="insertCymaticsEquationButton"
+                        class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                    >
+                        <span class="inline text-gray-200 mr-2">Insert Equation</span>
+                        <svg
+                            class="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Mandelbrot Modal -->
+    <div
+        id="mandelbrotModal"
+        class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 ">
+        <div
+            x-transition
+            class="relative bg-white rounded-lg shadow-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto mx-4"
+        >
+            <button
+                id="mandelbrotModalClose"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none"
+                type="button"
+            >
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">
+                Mandelbrot Parameters
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label
+                        for="maxIterationsInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >Max Iterations</label>
+                    <input
+                        type="number"
+                        id="maxIterationsInput"
+                        name="maxIterationsInput"
+                        min="1"
+                        step="1"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="thresholdInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >Threshold</label>
+                    <input
+                        type="number"
+                        id="thresholdInput"
+                        name="thresholdInput"
+                        step="any"
+                        min="0"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center pb-20 sm:pb-6">
+                <button
+                    type="button"
+                    id="insertMandelbrotButton"
+                    class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                >
+                    <span class="inline text-gray-200 mr-2">Insert Mandelbrot</span>
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"
+                        />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Julia Modal -->
+    <div
+        id="juliaModal"
+        class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 ">
+        <div
+            x-transition
+            class="relative bg-white rounded-lg shadow-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto mx-4"
+        >
+            <button
+                id="juliaModalClose"
+                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none"
+                type="button"
+            >
+                &times;
+            </button>
+
+            <h2 class="text-xl font-semibold mb-4">
+                Julia Set Parameters
+            </h2>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label
+                        for="juliaMaxIterationsInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >Max Iterations</label>
+                    <input
+                        type="number"
+                        id="juliaMaxIterationsInput"
+                        name="juliaMaxIterationsInput"
+                        min="1"
+                        step="1"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="juliaThresholdInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >Threshold</label>
+                    <input
+                        type="number"
+                        id="juliaThresholdInput"
+                        name="juliaThresholdInput"
+                        step="any"
+                        min="0"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="juliaCRealInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >C Real</label>
+                    <input
+                        type="number"
+                        id="juliaCRealInput"
+                        name="juliaCRealInput"
+                        step="any"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+                <div>
+                    <label
+                        for="juliaCImagInput"
+                        class="block text-sm font-medium text-gray-600"
+                    >C Imaginary</label>
+                    <input
+                        type="number"
+                        id="juliaCImagInput"
+                        name="juliaCImagInput"
+                        step="any"
+                        required
+                        class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center pb-20 sm:pb-6">
+                <button
+                    type="button"
+                    id="insertJuliaButton"
+                    class="px-6 py-2 bg-gray-800 text-white font-semibold rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                >
+                    <span class="inline text-gray-200 mr-2">Insert Julia</span>
+                    <svg
+                        class="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"
+                        />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

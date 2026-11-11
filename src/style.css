@@ -1,0 +1,68 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+
+html, body {
+      height: 100%;
+      overflow: hidden;             /* stop page scroll */
+      overscroll-behavior: none;    /* stop pull-to-refresh/bounce */
+}
+
+#mainCanvas {
+    touch-action: none;
+    /* Prevents default touch behaviors like scrolling to allow pan. */
+    user-select: none;
+}
+
+.coords {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    pointer-events: none;
+    user-select: none;
+    display: none;
+}
+
+.tooltip-button {
+    position: relative;
+    padding: 10px 20px;
+    cursor: pointer;
+}
+
+.tooltip-button::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.tooltip-button:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Remove number input arrows (Chrome, Safari, Edge, Opera) */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Remove number input arrows (Firefox) */
+.no-spinner[type="number"] {
+    -moz-appearance: textfield;
+}

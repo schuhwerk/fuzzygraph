@@ -6,10 +6,16 @@ const math = create(all);
 
 // import { evaluate_cmap } from './js-colormaps.js';
 import { getMatplotlibColormap } from './ga_color.js';
-import { compileEquationToGLSL, COMPLEX_GLSL } from './equation_glsl.js';
+import { compileEquationToGLSL, compileExpressionToGLSL, COMPLEX_GLSL } from './equation_glsl.js';
 
 export const ZOOM_RATE = 1.5;
 export const MAX_FUZZY = 200;
+
+// Samples per canvas pixel along each axis (2 = 4 samples per pixel). Higher
+// values smooth thin lines further and cost that many squared more evaluations.
+export const DEFAULT_SUPERSAMPLE = 2;
+// Caps the values texture (4 bytes per sample) at 128 MB.
+const MAX_SUPERSAMPLE_TEXELS = 32 * 1024 * 1024;
 
 export function isMandelbrotEquation(eqStr) {
   if (!eqStr || typeof eqStr !== 'string') return false;
@@ -185,7 +191,27 @@ function getFunctionFromCode(jsCode) {
   return eval(`(function(){ ${jsCode}; return f; })()`);
 }
 
-export function parseEquationString(eq_str) {
+const PARSE_CACHE_SIZE = 32;
+const parseCache = new Map();
+
+// Parsing with math.js is slow enough to matter when repainting on every
+// slider tick, so results are memoized by equation string.
+// allowJs: JavaScript function equations are executed to build them, so callers
+// must pass false for equations from untrusted sources (share links, images).
+export function parseEquationString(eq_str, { allowJs = true } = {}) {
+  const key = `${allowJs ? 'js' : 'nojs'}|${eq_str}`;
+  if (parseCache.has(key)) {
+    return parseCache.get(key);
+  }
+  const fn = parseEquationStringUncached(eq_str, allowJs);
+  parseCache.set(key, fn);
+  if (parseCache.size > PARSE_CACHE_SIZE) {
+    parseCache.delete(parseCache.keys().next().value);
+  }
+  return fn;
+}
+
+function parseEquationStringUncached(eq_str, allowJs) {
   if (isPolarEquation(eq_str)) {
     const fn = parsePolarEquationString(eq_str);
     if (fn) {
@@ -195,7 +221,7 @@ export function parseEquationString(eq_str) {
     }
     return fn;
   }
-  else if (isJsFunction(eq_str)) {
+  else if (allowJs && isJsFunction(eq_str)) {
     const fn = getFunctionFromCode(eq_str);
     if (fn) {
       fn._source = eq_str;
@@ -451,148 +477,210 @@ function getJuliaProgram(gl, func, useSmoothColoring) {
   return program;
 }
 
-function ensureValueResources(gl, width, height) {
-  const sameSize = glState.valueSize && glState.valueSize.width === width && glState.valueSize.height === height;
-  const needsTex = !glState.valuesTex;
-  if (!needsTex && sameSize) {
-    return;
-  }
-  if (needsTex) {
-    glState.valuesTex = gl.createTexture();
-    glState.valueFbo = gl.createFramebuffer();
-  }
-  gl.bindTexture(gl.TEXTURE_2D, glState.valuesTex);
+function createFloatTarget(gl, internalFormat, format, width, height) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, width, height, 0, gl.RED, gl.FLOAT, null);
+  gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, gl.FLOAT, null);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  if (status !== gl.FRAMEBUFFER_COMPLETE) {
+    gl.deleteFramebuffer(fbo);
+    gl.deleteTexture(tex);
+    throw new Error('Failed to create float framebuffer.');
+  }
+  return { tex, fbo };
+}
+
+function deleteFloatTarget(gl, target) {
+  if (!target) return;
+  gl.deleteFramebuffer(target.fbo);
+  gl.deleteTexture(target.tex);
+}
+
+function ensureValueResources(gl, width, height) {
+  const sameSize = glState.valueSize && glState.valueSize.width === width && glState.valueSize.height === height;
+  if (glState.valuesTex && sameSize) {
+    return;
+  }
+  deleteFloatTarget(gl, glState.valuesTex && { tex: glState.valuesTex, fbo: glState.valueFbo });
+  glState.reduceTargets.forEach(t => deleteFloatTarget(gl, t));
+  glState.reduceTargets = [];
+  glState.valuesTex = null;
+  glState.valueFbo = null;
+  glState.valueSize = null;
+
+  const values = createFloatTarget(gl, gl.R32F, gl.RED, width, height);
+  glState.valuesTex = values.tex;
+  glState.valueFbo = values.fbo;
   glState.valueSize = { width, height };
 
-  gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, glState.valuesTex, 0);
-  const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-  if (status !== gl.FRAMEBUFFER_COMPLETE) {
-    throw new Error('Failed to create framebuffer for evaluation.');
-  }
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  const rw = Math.ceil(width / REDUCE_BLOCK);
+  const rh = Math.ceil(height / REDUCE_BLOCK);
+  glState.reduceTargets = [
+    createFloatTarget(gl, gl.RGBA32F, gl.RGBA, rw, rh),
+    createFloatTarget(gl, gl.RGBA32F, gl.RGBA, rw, rh),
+  ];
+  invalidateValues();
+}
+
+// Marks the values texture as no longer matching any cached evaluation.
+function invalidateValues() {
+  glState.valuesKey = null;
+  glState.lastEval = null;
+  glState.valuesGeneration++;
 }
 
 function getEvalProgram(gl, eqStr, isPolar) {
-  if (glState.evalProgram && glState.evalProgram._eqStr === eqStr && glState.evalProgram._isPolar === isPolar) {
-    return glState.evalProgram;
+  glState.evalPrograms = glState.evalPrograms || new Map();
+  const key = `${isPolar ? 'polar' : 'cartesian'}|${eqStr}`;
+  const cached = glState.evalPrograms.get(key);
+  if (cached) {
+    // Refresh insertion order so the cache evicts the least recently used program.
+    glState.evalPrograms.delete(key);
+    glState.evalPrograms.set(key, cached);
+    return cached;
   }
   const fragSrc = buildEvalShader(eqStr, isPolar);
   const program = createProgram(gl, VERT_SRC, fragSrc);
-  program._eqStr = eqStr;
-  program._isPolar = isPolar;
-  glState.evalProgram = program;
+  glState.evalPrograms.set(key, program);
+  if (glState.evalPrograms.size > PROGRAM_CACHE_SIZE) {
+    const [oldestKey, oldest] = glState.evalPrograms.entries().next().value;
+    gl.deleteProgram(oldest);
+    glState.evalPrograms.delete(oldestKey);
+  }
   return program;
 }
 
-function evaluateMandelbrotToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta = 1, sinTheta = 0, useSmoothColoring = false) {
-  ensureGL(canvasWidth, canvasHeight);
-  const gl = glState.gl;
-  ensureValueResources(gl, canvasWidth, canvasHeight);
-  const program = getMandelbrotProgram(gl, func, useSmoothColoring);
-
-  gl.useProgram(program);
-  gl.bindVertexArray(glState.vao);
-  gl.viewport(0, 0, canvasWidth, canvasHeight);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
-
-  gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), canvasWidth, canvasHeight);
-  gl.uniform4f(gl.getUniformLocation(program, 'uBounds'), windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax']);
-  gl.uniform2f(gl.getUniformLocation(program, 'uRotation'), cosTheta, sinTheta);
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  const values = new Float32Array(canvasWidth * canvasHeight);
-  gl.readPixels(0, 0, canvasWidth, canvasHeight, gl.RED, gl.FLOAT, values);
-  let minValue = Infinity;
-  let maxValue = -Infinity;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i];
-    if (v < minValue) minValue = v;
-    if (v > maxValue) maxValue = v;
-  }
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-  return { pixelValues: values, min: minValue, max: maxValue, fromGPU: true };
-}
-
-function evaluateJuliaToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta = 1, sinTheta = 0, useSmoothColoring = false) {
-  ensureGL(canvasWidth, canvasHeight);
-  const gl = glState.gl;
-  ensureValueResources(gl, canvasWidth, canvasHeight);
-  const program = getJuliaProgram(gl, func, useSmoothColoring);
-
-  gl.useProgram(program);
-  gl.bindVertexArray(glState.vao);
-  gl.viewport(0, 0, canvasWidth, canvasHeight);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
-
-  gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), canvasWidth, canvasHeight);
-  gl.uniform4f(gl.getUniformLocation(program, 'uBounds'), windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax']);
-  gl.uniform2f(gl.getUniformLocation(program, 'uRotation'), cosTheta, sinTheta);
-
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-  const values = new Float32Array(canvasWidth * canvasHeight);
-  gl.readPixels(0, 0, canvasWidth, canvasHeight, gl.RED, gl.FLOAT, values);
-  let minValue = Infinity;
-  let maxValue = -Infinity;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i];
-    if (v < minValue) minValue = v;
-    if (v > maxValue) maxValue = v;
-  }
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-  return { pixelValues: values, min: minValue, max: maxValue, fromGPU: true };
-}
-
-function evaluateEquationToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta = 1, sinTheta = 0, useSmoothColoring = false) {
-  if (func && func._isMandelbrot) {
-    return evaluateMandelbrotToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta, sinTheta, useSmoothColoring);
-  }
-  if (func && func._isJulia) {
-    return evaluateJuliaToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta, sinTheta, useSmoothColoring);
-  }
+function getValueProgram(gl, func, useSmoothColoring) {
+  if (func && func._isMandelbrot) return getMandelbrotProgram(gl, func, useSmoothColoring);
+  if (func && func._isJulia) return getJuliaProgram(gl, func, useSmoothColoring);
   if (!func || !func._source || func._isJsFunction) {
     throw new Error('Equation source unavailable for GPU evaluation.');
   }
+  return getEvalProgram(gl, func._source, func._isPolar);
+}
+
+// Largest per-axis sample count <= requested whose values texture fits the GPU
+// limits and the memory budget.
+function chooseSupersample(gl, canvasWidth, canvasHeight, requested) {
+  const maxDim = Math.min(gl.getParameter(gl.MAX_TEXTURE_SIZE), ...gl.getParameter(gl.MAX_VIEWPORT_DIMS));
+  let ss = Math.max(1, Math.floor(Number(requested) || 1));
+  while (ss > 1 && (
+    canvasWidth * ss > maxDim ||
+    canvasHeight * ss > maxDim ||
+    canvasWidth * canvasHeight * ss * ss > MAX_SUPERSAMPLE_TEXELS
+  )) {
+    ss--;
+  }
+  return ss;
+}
+
+// Sizes the values texture for `ss` x `ss` samples per canvas pixel, dropping
+// to one sample per pixel if the larger texture cannot be allocated.
+function ensureSupersampledValues(gl, canvasWidth, canvasHeight, ss) {
+  try {
+    ensureValueResources(gl, canvasWidth * ss, canvasHeight * ss);
+  } catch (err) {
+    if (ss === 1) throw err;
+    console.warn(`Supersampling ${ss}x${ss} unavailable, using 1x1:`, err);
+    ss = 1;
+    ensureValueResources(gl, canvasWidth, canvasHeight);
+  }
+  glState.valueSS = ss;
+  return ss;
+}
+
+// Evaluates the equation into the values texture, `ss` x `ss` samples per
+// canvas pixel. Nothing is read back.
+function renderValuesToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta, sinTheta, useSmoothColoring, ss = 1) {
   ensureGL(canvasWidth, canvasHeight);
   const gl = glState.gl;
-  ensureValueResources(gl, canvasWidth, canvasHeight);
-  const program = getEvalProgram(gl, func._source, func._isPolar);
+  const program = getValueProgram(gl, func, useSmoothColoring);
+  ss = ensureSupersampledValues(gl, canvasWidth, canvasHeight, chooseSupersample(gl, canvasWidth, canvasHeight, ss));
+  const valuesWidth = canvasWidth * ss;
+  const valuesHeight = canvasHeight * ss;
 
   gl.useProgram(program);
   gl.bindVertexArray(glState.vao);
-  gl.viewport(0, 0, canvasWidth, canvasHeight);
   gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
+  gl.viewport(0, 0, valuesWidth, valuesHeight);
 
-  gl.uniform2f(gl.getUniformLocation(program, 'uResolution'), canvasWidth, canvasHeight);
-  gl.uniform4f(gl.getUniformLocation(program, 'uBounds'), windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax']);
-  gl.uniform2f(gl.getUniformLocation(program, 'uRotation'), cosTheta, sinTheta);
+  gl.uniform2f(uniformLoc(gl, program, 'uResolution'), valuesWidth, valuesHeight);
+  gl.uniform4f(uniformLoc(gl, program, 'uBounds'), windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax']);
+  gl.uniform2f(uniformLoc(gl, program, 'uRotation'), cosTheta, sinTheta);
 
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  invalidateValues();
+  return ss;
+}
 
-  const values = new Float32Array(canvasWidth * canvasHeight);
-  gl.readPixels(0, 0, canvasWidth, canvasHeight, gl.RED, gl.FLOAT, values);
-  let minValue = Infinity;
-  let maxValue = -Infinity;
-  for (let i = 0; i < values.length; i++) {
-    const v = values[i];
-    if (v < minValue) minValue = v;
-    if (v > maxValue) maxValue = v;
+// Min/max of the values texture via repeated block reduction on the GPU, so only
+// one pixel has to be read back instead of the whole canvas.
+function reduceMinMaxOnGPU(width, height) {
+  const gl = glState.gl;
+  if (!glState.reduceProgram) {
+    glState.reduceProgram = createProgram(gl, VERT_SRC, REDUCE_SRC);
+  }
+  const program = glState.reduceProgram;
+  gl.useProgram(program);
+  gl.bindVertexArray(glState.vao);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.uniform1i(uniformLoc(gl, program, 'uSrc'), 0);
+
+  let srcTex = glState.valuesTex;
+  let srcW = width;
+  let srcH = height;
+  let first = true;
+  let target = null;
+  for (let pass = 0; first || srcW > 1 || srcH > 1; pass++) {
+    const dstW = Math.ceil(srcW / REDUCE_BLOCK);
+    const dstH = Math.ceil(srcH / REDUCE_BLOCK);
+    target = glState.reduceTargets[pass % 2];
+    gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
+    gl.viewport(0, 0, dstW, dstH);
+    gl.bindTexture(gl.TEXTURE_2D, srcTex);
+    gl.uniform2i(uniformLoc(gl, program, 'uSrcSize'), srcW, srcH);
+    gl.uniform1i(uniformLoc(gl, program, 'uFirst'), first ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    srcTex = target.tex;
+    srcW = dstW;
+    srcH = dstH;
+    first = false;
   }
 
+  const out = new Float32Array(4);
+  gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.FLOAT, out);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { min: out[0], max: out[1] };
+}
 
-  return { pixelValues: values, min: minValue, max: maxValue, fromGPU: true };
+function readAllValuesFromGPU(width, height) {
+  const gl = glState.gl;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
+  const values = new Float32Array(width * height);
+  gl.readPixels(0, 0, width, height, gl.RED, gl.FLOAT, values);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return values;
+}
+
+// Reads the sample nearest the centre of canvas pixel (px, py).
+function readValueFromGPU(px, py) {
+  const gl = glState.gl;
+  const ss = glState.valueSS;
+  const offset = Math.floor(ss / 2);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, glState.valueFbo);
+  const out = new Float32Array(4);
+  gl.readPixels(px * ss + offset, py * ss + offset, 1, 1, gl.RGBA, gl.FLOAT, out);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return out[0];
 }
 
 function buildMandelbrotCpuEvaluator(func) {
@@ -649,18 +737,17 @@ function buildJuliaCpuEvaluator(func) {
   };
 }
 
-export function calculateFuncForWindow(func, windowBounds, canvasWidth, canvasHeight, rotationRadians = 0, zoomLevel = 1) {
+function rotationParams(rotationRadians, zoomLevel) {
   const hasRotation = Number.isFinite(rotationRadians) && rotationRadians !== 0;
-  const cosTheta = hasRotation ? Math.cos(rotationRadians) : 1;
-  const sinTheta = hasRotation ? -Math.sin(rotationRadians) : 0;
-  const useSmoothColoring = Number.isFinite(zoomLevel) && zoomLevel > 5000;
+  return {
+    hasRotation,
+    cosTheta: hasRotation ? Math.cos(rotationRadians) : 1,
+    sinTheta: hasRotation ? -Math.sin(rotationRadians) : 0,
+    useSmoothColoring: Number.isFinite(zoomLevel) && zoomLevel > 5000,
+  };
+}
 
-  try {
-    return evaluateEquationToTexture(func, windowBounds, canvasWidth, canvasHeight, cosTheta, sinTheta, useSmoothColoring);
-  } catch (err) {
-    console.warn('Falling back to CPU evaluation:', err);
-  }
-
+function evaluateOnCPU(func, windowBounds, canvasWidth, canvasHeight, { hasRotation, cosTheta, sinTheta }) {
   var pixelToXMapper = makeLinearMapper([0, canvasWidth], [windowBounds['xMin'], windowBounds['xMax']], false);
   var pixelToYMapper = makeLinearMapper([canvasHeight, 0], [windowBounds['yMin'], windowBounds['yMax']], false);
   var minValue = 9999999;
@@ -691,6 +778,71 @@ export function calculateFuncForWindow(func, windowBounds, canvasWidth, canvasHe
   }
 
   return {'pixelValues': pixelValues, 'max': maxValue, 'min': minValue, fromGPU: false};
+}
+
+// Returns every pixel value. displayGraph does not use this (it keeps values on
+// the GPU); it stays for callers that need the full array.
+export function calculateFuncForWindow(func, windowBounds, canvasWidth, canvasHeight, rotationRadians = 0, zoomLevel = 1) {
+  const rot = rotationParams(rotationRadians, zoomLevel);
+
+  try {
+    renderValuesToTexture(func, windowBounds, canvasWidth, canvasHeight, rot.cosTheta, rot.sinTheta, rot.useSmoothColoring);
+    const values = readAllValuesFromGPU(canvasWidth, canvasHeight);
+    let minValue = Infinity;
+    let maxValue = -Infinity;
+    for (let i = 0; i < values.length; i++) {
+      const v = values[i];
+      if (v < minValue) minValue = v;
+      if (v > maxValue) maxValue = v;
+    }
+    return { pixelValues: values, min: minValue, max: maxValue, fromGPU: true };
+  } catch (err) {
+    console.warn('Falling back to CPU evaluation:', err);
+  }
+
+  return evaluateOnCPU(func, windowBounds, canvasWidth, canvasHeight, rot);
+}
+
+// Identifies everything the values texture depends on. Color, fuzzy and min/max
+// settings are deliberately absent: changing them only re-runs the color pass.
+function evaluationKey(func, windowBounds, canvasWidth, canvasHeight, rotationRadians, useSmoothColoring, supersample) {
+  // JS functions may be impure (e.g. Math.random), so never reuse their output.
+  if (!func || func._isJsFunction) return null;
+  return JSON.stringify([
+    func._source, !!func._isPolar, !!func._isMandelbrot, !!func._isJulia,
+    func.maxIterations, func.threshold, func.cRe, func.cIm,
+    windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax'],
+    canvasWidth, canvasHeight, rotationRadians || 0, useSmoothColoring, supersample,
+  ]);
+}
+
+function evaluateForDisplay(func, windowBounds, canvasWidth, canvasHeight, rotationRadians, zoomLevel, supersample) {
+  const rot = rotationParams(rotationRadians, zoomLevel);
+  const key = evaluationKey(func, windowBounds, canvasWidth, canvasHeight, rotationRadians, rot.useSmoothColoring, supersample);
+  if (key !== null && glState.gl && glState.valuesKey === key && glState.lastEval) {
+    return glState.lastEval;
+  }
+
+  let result;
+  try {
+    const ss = renderValuesToTexture(func, windowBounds, canvasWidth, canvasHeight, rot.cosTheta, rot.sinTheta, rot.useSmoothColoring, supersample);
+    const { min, max } = reduceMinMaxOnGPU(canvasWidth * ss, canvasHeight * ss);
+    result = { pixelValues: null, min, max, fromGPU: true };
+  } catch (err) {
+    console.warn('Falling back to CPU evaluation:', err);
+    result = evaluateOnCPU(func, windowBounds, canvasWidth, canvasHeight, rot);
+    ensureGL(canvasWidth, canvasHeight);
+    ensureSupersampledValues(glState.gl, canvasWidth, canvasHeight, 1);
+    uploadValuesTexture(result.pixelValues, canvasWidth, canvasHeight);
+    invalidateValues();
+  }
+
+  result.width = canvasWidth;
+  result.height = canvasHeight;
+  result.generation = glState.valuesGeneration;
+  glState.valuesKey = key;
+  glState.lastEval = result;
+  return result;
 }
 
 // // // // // // // Display Graph
@@ -824,16 +976,43 @@ export function drawAxes(canvas, xCenter, yCenter, xMin, xMax, yMin, yMax, optio
   }
 }
 
-function calculateFuzzyFactor(fuzzyValue) {
-  return 0.01 * fuzzyValue;
+// // // // // // // Fuzzy function
+
+// The fuzzy function maps an error value `v` (>= 0) to the value that gets
+// colored. `f` is the Fuzzy Level slider as a fraction (0.01 to 1).
+export const DEFAULT_FUZZY_FUNCTION = '(v + 0.000001)^f';
+
+export const FUZZY_FUNCTION_PRESETS = [
+  { id: 'power', label: 'Power (default)', expression: DEFAULT_FUZZY_FUNCTION },
+  { id: 'log', label: 'Logarithmic', expression: 'log(v + 10^(-8 * (1 - f)))' },
+  { id: 'exp', label: 'Exponential', expression: '1 - exp(-v / f)' },
+  { id: 'atan', label: 'Arctangent', expression: 'atan(v / f^2)' },
+  { id: 'linear', label: 'Linear', expression: 'v' },
+];
+
+const FUZZY_SYMBOLS = {
+  v: { nonnegative: true },
+  f: { nonnegative: true },
+};
+
+function normalizeFuzzyFunction(expression) {
+  if (expression == null) return DEFAULT_FUZZY_FUNCTION;
+  const str = String(expression).trim();
+  return str === '' ? DEFAULT_FUZZY_FUNCTION : str;
 }
 
-function applyFuzzyTransfer(value, rawMin, rawMax, fuzzyValue, alpha = 1.0) {
-  if (fuzzyValue >= 1) {
-    const fuzzyFactor = calculateFuzzyFactor(fuzzyValue);
-    return Math.pow((alpha * value) + 1e-6, fuzzyFactor);
+function compileFuzzyFunction(expression) {
+  return compileExpressionToGLSL(normalizeFuzzyFunction(expression), FUZZY_SYMBOLS);
+}
+
+// Returns null when the expression is usable, otherwise an error message.
+export function validateFuzzyFunction(expression) {
+  try {
+    compileFuzzyFunction(expression);
+    return null;
+  } catch (err) {
+    return err && err.message ? err.message : String(err);
   }
-  return value < 0.02 ? rawMax : rawMin;
 }
 
 function createColormapLUT(colormapName, reverseColor, invertColor, colorStart = 0, colorCycles = 1, hueShiftDegrees = 0, saturationPercent = 0, luminosityPercent = 0) {
@@ -915,52 +1094,173 @@ void main() {
   gl_Position = vec4(aPos, 0.0, 1.0);
 }`;
 
-const FRAG_SRC = `#version 300 es
+const REDUCE_BLOCK = 4;
+const PROGRAM_CACHE_SIZE = 16;
+
+// Each output texel holds (min, max) of a REDUCE_BLOCK x REDUCE_BLOCK block of
+// the source. The first pass reads raw values and skips NaN, matching the CPU
+// comparison loop it replaces (NaN never wins a < or > comparison).
+const REDUCE_SRC = `#version 300 es
 precision highp float;
-in vec2 vUv;
+precision highp int;
+precision highp sampler2D;
+uniform sampler2D uSrc;
+uniform ivec2 uSrcSize;
+uniform bool uFirst;
+out vec4 outColor;
+
+bool fgIsNaN(float v) {
+  return (floatBitsToUint(v) & 0x7fffffffu) > 0x7f800000u;
+}
+
+void main() {
+  ivec2 base = ivec2(gl_FragCoord.xy) * ${REDUCE_BLOCK};
+  float lo = uintBitsToFloat(0x7f800000u);
+  float hi = -lo;
+  for (int dy = 0; dy < ${REDUCE_BLOCK}; dy++) {
+    for (int dx = 0; dx < ${REDUCE_BLOCK}; dx++) {
+      ivec2 p = base + ivec2(dx, dy);
+      if (p.x >= uSrcSize.x || p.y >= uSrcSize.y) continue;
+      vec4 s = texelFetch(uSrc, p, 0);
+      if (uFirst) {
+        if (fgIsNaN(s.r)) continue;
+        lo = min(lo, s.r);
+        hi = max(hi, s.r);
+      } else {
+        lo = min(lo, s.r);
+        hi = max(hi, s.g);
+      }
+    }
+  }
+  outColor = vec4(lo, hi, 0.0, 1.0);
+}`;
+
+// The fuzzy function is applied to every sample and to the raw min/max, so the
+// normalization always matches the shader's own math. Each canvas pixel
+// averages the colors of its uSS x uSS samples in linear light; averaging the
+// values instead would blur away thin lines, since the transfer is nonlinear.
+function buildColorShader(fuzzy) {
+  return `#version 300 es
+precision highp float;
+precision highp int;
+precision highp sampler2D;
 out vec4 outColor;
 uniform sampler2D uValues;
 uniform sampler2D uColormap;
 uniform vec2 uResolution;
-uniform float uNormMin;
-uniform float uNormMax;
 uniform float uRawMin;
 uniform float uRawMax;
 uniform float uFuzzy;
-uniform float uAlpha;
+uniform int uSS;
+${COMPLEX_GLSL}
+float fgFuzzyFunction(float v, float f) {
+${fuzzy.statements}
+  return ${fuzzy.expression};
+}
 
 float transfer(float value) {
   if (uFuzzy >= 1.0) {
-    float fuzzyFactor = 0.01 * uFuzzy;
-    return pow((uAlpha * value) + 1e-6, fuzzyFactor);
+    return fgFuzzyFunction(value, 0.01 * uFuzzy);
   } else {
     return value < 0.02 ? uRawMax : uRawMin;
   }
 }
 
+bool fgIsNaN(float v) {
+  return (floatBitsToUint(v) & 0x7fffffffu) > 0x7f800000u;
+}
+
+vec3 srgbToLinear(vec3 c) {
+  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
+
+vec3 linearToSrgb(vec3 c) {
+  return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+}
+
+vec3 sampleColor(ivec2 texel, float normMin, float normMax) {
+  float value = texelFetch(uValues, texel, 0).r;
+  float t = clamp((transfer(value) - normMin) / max(1e-6, normMax - normMin), 0.0, 1.0);
+  if (fgIsNaN(t)) t = 0.0;
+  return texture(uColormap, vec2(t, 0.5)).rgb;
+}
+
 void main() {
-  vec2 uv = vec2(gl_FragCoord.x / uResolution.x, 1.0 - (gl_FragCoord.y / uResolution.y));
-  float value = texture(uValues, uv).r;
-  float modified = transfer(value);
-  float t = clamp((modified - uNormMin) / max(1e-6, uNormMax - uNormMin), 0.0, 1.0);
-  vec4 cmap = texture(uColormap, vec2(t, 0.5));
-  outColor = vec4(cmap.rgb, 1.0);
+  ivec2 pixel = ivec2(int(gl_FragCoord.x), int(uResolution.y) - 1 - int(gl_FragCoord.y));
+  float normMin = transfer(uRawMin);
+  float normMax = transfer(uRawMax);
+  if (uSS <= 1) {
+    outColor = vec4(sampleColor(pixel, normMin, normMax), 1.0);
+    return;
+  }
+  ivec2 base = pixel * uSS;
+  vec3 sum = vec3(0.0);
+  for (int dy = 0; dy < uSS; dy++) {
+    for (int dx = 0; dx < uSS; dx++) {
+      sum += srgbToLinear(sampleColor(base + ivec2(dx, dy), normMin, normMax));
+    }
+  }
+  outColor = vec4(linearToSrgb(sum / float(uSS * uSS)), 1.0);
 }`;
+}
 
 const glState = {
   gl: null,
-  program: null,
-  evalProgram: null,
+  evalPrograms: null,
   mandelbrotPrograms: null,
   juliaPrograms: null,
+  colorPrograms: new Map(),
+  reduceProgram: null,
   vao: null,
   valuesTex: null,
   valueFbo: null,
   valueSize: null,
+  valueSS: 1,
+  reduceTargets: [],
+  valuesKey: null,
+  valuesGeneration: 0,
+  lastEval: null,
   colormapTex: null,
+  colormapKey: null,
   canvas: null,
   floatExt: null,
 };
+
+function uniformLoc(gl, program, name) {
+  if (!program._uniformLocs) program._uniformLocs = Object.create(null);
+  if (!(name in program._uniformLocs)) {
+    program._uniformLocs[name] = gl.getUniformLocation(program, name);
+  }
+  return program._uniformLocs[name];
+}
+
+// Returns { program, error }. An invalid fuzzy function falls back to the
+// default one and reports why, so the graph still renders.
+function getColorProgram(gl, fuzzyFunction) {
+  const expression = normalizeFuzzyFunction(fuzzyFunction);
+  const cached = glState.colorPrograms.get(expression);
+  if (cached) return cached;
+
+  let entry;
+  try {
+    entry = { program: createProgram(gl, VERT_SRC, buildColorShader(compileFuzzyFunction(expression))), error: null };
+  } catch (err) {
+    if (expression === DEFAULT_FUZZY_FUNCTION) throw err;
+    const fallback = getColorProgram(gl, DEFAULT_FUZZY_FUNCTION);
+    entry = { program: fallback.program, error: err && err.message ? err.message : String(err) };
+  }
+  glState.colorPrograms.set(expression, entry);
+  if (glState.colorPrograms.size > PROGRAM_CACHE_SIZE) {
+    for (const [key, value] of glState.colorPrograms) {
+      if (key === DEFAULT_FUZZY_FUNCTION || key === expression) continue;
+      const shared = [...glState.colorPrograms.values()].some(e => e !== value && e.program === value.program);
+      if (!shared) gl.deleteProgram(value.program);
+      glState.colorPrograms.delete(key);
+      break;
+    }
+  }
+  return entry;
+}
 
 function initGL(width, height) {
   if (!glState.canvas) {
@@ -979,10 +1279,6 @@ function initGL(width, height) {
   glState.floatExt = floatExt;
   glState.gl = gl;
   gl.viewport(0, 0, width, height);
-
-  const program = createProgram(gl, VERT_SRC, FRAG_SRC);
-  glState.program = program;
-  gl.useProgram(program);
 
   const quad = new Float32Array([
     -1, -1,
@@ -1006,10 +1302,11 @@ function initGL(width, height) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   glState.colormapTex = colormapTex;
-
-  ensureValueResources(gl, width, height);
+  glState.colormapKey = null;
 }
 
+// Sizes the output canvas only; the values texture is sized by its writers,
+// since it may hold several samples per canvas pixel.
 function ensureGL(width, height) {
   if (!glState.gl) {
     initGL(width, height);
@@ -1018,7 +1315,6 @@ function ensureGL(width, height) {
     glState.canvas.height = height;
     glState.gl.viewport(0, 0, width, height);
   }
-  ensureValueResources(glState.gl, width, height);
 }
 
 function uploadValuesTexture(pixelValues, width, height) {
@@ -1030,6 +1326,8 @@ function uploadValuesTexture(pixelValues, width, height) {
 }
 
 function uploadColormapTexture(colormapName, reverseColor, invertColor, colorStart = 0, colorCycles = 1, hueShiftDegrees = 0, saturationPercent = 0, luminosityPercent = 0) {
+  const key = JSON.stringify([colormapName, reverseColor, invertColor, colorStart, colorCycles, hueShiftDegrees, saturationPercent, luminosityPercent]);
+  if (key === glState.colormapKey) return;
   const gl = glState.gl;
   const lut = createColormapLUT(
     colormapName,
@@ -1044,16 +1342,15 @@ function uploadColormapTexture(colormapName, reverseColor, invertColor, colorSta
   gl.bindTexture(gl.TEXTURE_2D, glState.colormapTex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lut);
+  glState.colormapKey = key;
 }
 
-function renderToCanvas(canvasElem, pixelValues, rawMin, rawMax, normMin, normMax, fuzzyValue, colormapName, reverseColor, invertColor, colorStart, colorCycles, hueShiftDegrees, saturationPercent, luminosityPercent) {
-  ensureCanvasSize(canvasElem);
+function renderToCanvas(canvasElem, rawMin, rawMax, fuzzyValue, fuzzyFunction, colormapName, reverseColor, invertColor, colorStart, colorCycles, hueShiftDegrees, saturationPercent, luminosityPercent) {
   const width = canvasElem.width;
   const height = canvasElem.height;
   ensureGL(width, height);
   const gl = glState.gl;
 
-  uploadValuesTexture(pixelValues, width, height);
   uploadColormapTexture(
     colormapName,
     reverseColor,
@@ -1065,24 +1362,25 @@ function renderToCanvas(canvasElem, pixelValues, rawMin, rawMax, normMin, normMa
     luminosityPercent,
   );
 
-  gl.useProgram(glState.program);
+  const { program, error } = getColorProgram(gl, fuzzyFunction);
+  gl.useProgram(program);
   gl.bindVertexArray(glState.vao);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, glState.valuesTex);
-  gl.uniform1i(gl.getUniformLocation(glState.program, 'uValues'), 0);
+  gl.uniform1i(uniformLoc(gl, program, 'uValues'), 0);
 
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, glState.colormapTex);
-  gl.uniform1i(gl.getUniformLocation(glState.program, 'uColormap'), 1);
+  gl.uniform1i(uniformLoc(gl, program, 'uColormap'), 1);
+  gl.activeTexture(gl.TEXTURE0);
 
-  gl.uniform2f(gl.getUniformLocation(glState.program, 'uResolution'), width, height);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uNormMin'), normMin);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uNormMax'), normMax);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uRawMin'), rawMin);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uRawMax'), rawMax);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uFuzzy'), fuzzyValue);
-  gl.uniform1f(gl.getUniformLocation(glState.program, 'uAlpha'), 1.0);
+  gl.uniform2f(uniformLoc(gl, program, 'uResolution'), width, height);
+  gl.uniform1f(uniformLoc(gl, program, 'uRawMin'), rawMin);
+  gl.uniform1f(uniformLoc(gl, program, 'uRawMax'), rawMax);
+  gl.uniform1f(uniformLoc(gl, program, 'uFuzzy'), fuzzyValue);
+  gl.uniform1i(uniformLoc(gl, program, 'uSS'), glState.valueSS);
 
   gl.viewport(0, 0, width, height);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1091,8 +1389,13 @@ function renderToCanvas(canvasElem, pixelValues, rawMin, rawMax, normMin, normMa
   ctx2d.setTransform(1, 0, 0, 1, 0, 0);
   ctx2d.clearRect(0, 0, width, height);
   ctx2d.drawImage(glState.canvas, 0, 0, width, height);
+  return error;
 }
 
+// Returns { min, max, fromGPU, pixelValues, getValueAt, fuzzyFunctionError }.
+// pixelValues is only set for CPU-evaluated equations; use getValueAt(px, py)
+// (canvas pixels, origin top-left) to read single values. It returns null once
+// another displayGraph call has replaced the values.
 export function displayGraph(graphParams, canvasElem) {
   ensureCanvasSize(canvasElem);
   const canvasWidth = canvasElem.width;
@@ -1103,15 +1406,16 @@ export function displayGraph(graphParams, canvasElem) {
       canvasWidth,
       canvasHeight);
 
-  var pixelValues = calculateFuncForWindow(graphParams['equationFunction'],
+  const evalResult = evaluateForDisplay(graphParams['equationFunction'],
       windowBounds,
       canvasWidth,
       canvasHeight,
       graphParams['rotationRadians'],
-      graphParams['zoom']);
+      graphParams['zoom'],
+      graphParams['supersample'] ?? DEFAULT_SUPERSAMPLE);
 
-  var minVal = pixelValues['min'];
-  var maxVal = pixelValues['max'];
+  var minVal = evalResult['min'];
+  var maxVal = evalResult['max'];
 
   if (graphParams['minOverride'] != null && graphParams['minOverride'] != '') {
     minVal = graphParams['minOverride'];
@@ -1120,16 +1424,11 @@ export function displayGraph(graphParams, canvasElem) {
     maxVal = graphParams['maxOverride'];
   }
 
-  const normMin = applyFuzzyTransfer(minVal, minVal, maxVal, graphParams['fuzzyLevel'], 1.0);
-  const normMax = applyFuzzyTransfer(maxVal, minVal, maxVal, graphParams['fuzzyLevel'], 1.0);
-
-  renderToCanvas(canvasElem,
-      pixelValues['fromGPU'] ? null : pixelValues['pixelValues'],
+  const fuzzyFunctionError = renderToCanvas(canvasElem,
       minVal,
       maxVal,
-      normMin,
-      normMax,
       graphParams['fuzzyLevel'],
+      graphParams['fuzzyFunction'],
       graphParams['colorMap'],
       graphParams['reverseColor'],
       graphParams['invertColor'],
@@ -1140,9 +1439,22 @@ export function displayGraph(graphParams, canvasElem) {
       graphParams['luminosityPercent'] ?? 0);
 
   if (graphParams['showAxes']) {
-    const windowBounds2 = calcWindowBounds(graphParams['xCenter'], graphParams['yCenter'], graphParams['yHeight'], canvasWidth, canvasHeight);
-    drawAxes(canvasElem, graphParams['xCenter'], graphParams['yCenter'], windowBounds2['xMin'], windowBounds2['xMax'], windowBounds2['yMin'], windowBounds2['yMax']);
+    drawAxes(canvasElem, graphParams['xCenter'], graphParams['yCenter'], windowBounds['xMin'], windowBounds['xMax'], windowBounds['yMin'], windowBounds['yMax']);
   }
 
-  return pixelValues;
+  const { pixelValues, generation } = evalResult;
+  return {
+    min: evalResult['min'],
+    max: evalResult['max'],
+    fromGPU: evalResult['fromGPU'],
+    pixelValues,
+    fuzzyFunctionError,
+    getValueAt(px, py) {
+      if (!Number.isInteger(px) || !Number.isInteger(py)) return null;
+      if (px < 0 || py < 0 || px >= canvasWidth || py >= canvasHeight) return null;
+      if (pixelValues) return pixelValues[py * canvasWidth + px];
+      if (!glState.gl || glState.valuesGeneration !== generation) return null;
+      return readValueFromGPU(px, py);
+    },
+  };
 }

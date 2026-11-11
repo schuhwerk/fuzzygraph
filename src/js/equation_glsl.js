@@ -115,13 +115,19 @@ function constantNumber(node) {
   return Number.isFinite(result) ? result : undefined;
 }
 
+const EQUATION_SYMBOLS = {
+  x: { nonnegative: false },
+  y: { nonnegative: false },
+  r: { nonnegative: true },
+  t: { nonnegative: true },
+};
+
 // Use scalar GLSL for known-real operations, promoting to vec2 only when an
 // operation can leave the real domain. Emit each subexpression once: a sinc's
 // numerator and denominator can share the same expensive radial distance.
-export function compileEquationToGLSL(equation) {
-  const delimiter = equation.includes('≈') ? '≈' : '=';
-  const sides = equation.split(delimiter);
-  if (sides.length !== 2) throw new Error('Equation must contain a single equals sign.');
+// `symbols` whitelists the variable names; each one must already be a float in
+// the surrounding GLSL scope.
+function createCompiler(symbols) {
   const statements = [];
   const cache = new Map();
   const scalar = (code, nonnegative = false) => ({ code, complex: false, nonnegative });
@@ -208,7 +214,7 @@ export function compileEquationToGLSL(equation) {
     let value;
     if (constant !== undefined) value = literal(constant);
     else if (node.type === 'SymbolNode') {
-      if (['x', 'y', 'r', 't'].includes(node.name)) value = scalar(node.name, node.name === 'r' || node.name === 't');
+      if (Object.prototype.hasOwnProperty.call(symbols, node.name)) value = scalar(node.name, symbols[node.name].nonnegative);
       else if (node.name === 'i') value = { code: 'vec2(0.0, 1.0)', complex: true, nonnegative: false };
       else throw new Error(`Unsupported symbol ${node.name} in equation`);
     } else if (node.type === 'OperatorNode') {
@@ -224,7 +230,42 @@ export function compileEquationToGLSL(equation) {
     return value;
   }
 
-  const left = compile(parse(sides[0]));
-  const right = compile(parse(sides[1]));
-  return { statements: statements.join('\n'), expression: `abs(${realPart(left)} - ${realPart(right)})` };
+  return {
+    compile: source => compile(parse(source)),
+    realPart,
+    statements: () => statements.join('\n'),
+  };
+}
+
+export function compileEquationToGLSL(equation) {
+  const delimiter = equation.includes('≈') ? '≈' : '=';
+  const sides = equation.split(delimiter);
+  if (sides.length !== 2) throw new Error('Equation must contain a single equals sign.');
+  const compiler = createCompiler(EQUATION_SYMBOLS);
+  const left = compiler.compile(sides[0]);
+  const right = compiler.compile(sides[1]);
+  return {
+    statements: compiler.statements(),
+    expression: `abs(${compiler.realPart(left)} - ${compiler.realPart(right)})`,
+  };
+}
+
+export const MAX_EXPRESSION_LENGTH = 500;
+
+// Compiles a single real-valued expression (no equals sign) over the given
+// variables. Only whitelisted symbols, functions and numeric literals reach the
+// generated GLSL, so untrusted input (share links, PNG metadata) cannot inject code.
+export function compileExpressionToGLSL(expression, symbols) {
+  if (typeof expression !== 'string' || expression.trim() === '') {
+    throw new Error('Expression is empty.');
+  }
+  if (expression.length > MAX_EXPRESSION_LENGTH) {
+    throw new Error(`Expression is longer than ${MAX_EXPRESSION_LENGTH} characters.`);
+  }
+  if (/[=≈]/.test(expression)) {
+    throw new Error('Expression must not contain an equals sign.');
+  }
+  const compiler = createCompiler(symbols);
+  const result = compiler.compile(expression);
+  return { statements: compiler.statements(), expression: compiler.realPart(result) };
 }

@@ -1,35 +1,24 @@
-# fuzzygraph
+# FuzzyGraph
 
-<https://fuzzygraph.com>. Graphs where equations are not only exactly true, but close to true. Instead of black lines on a white background, this creates beautiful gradients.
+<https://schuhwerk.github.io/fuzzygraph/>
 
-# Features
+Graphs where equations are not only exactly true, but close to true: colour gradients instead of black lines.
 
-- Visualizes graphs as colorful gradients (with many colormaps available)
-- FuzzyGraph is a [Single-File Web App](https://gods.art/articles/single_file_web_apps.html) - a single fully self-contained HTML file (with no external dependencies) which can downloaded and run offline
-- No sign-ups or user tracking (no cookies, no analytics code, etc)
-- Saves images with equation and graph configuration (including pan, zoom, color map, etc) embedded in the saved PNG file such that images exported fom FuzzyGraph can be opened (which loads the config from the PNG image metadata).
-- Share links (which embeds the graph config in url parameters)
-- Digital Cymatics Equation Generator (Equation → + → ψ)
-- Mandelbrot Set visaulizer (Equation → + → Mandelbrot)
-- Julia Set visualizer (Equation → + → Julia)
+- One self-contained HTML file; runs offline, no tracking
+- The URL always holds the current graph (reload, bookmark, share)
+- Saved PNGs embed the graph settings and can be reopened
+- Cymatics, Mandelbrot and Julia generators (Equation → +)
 
-# Roadmap
+## Development
 
-- [x] Backward compatibility for images and share links
-- [x] New rendering math (v2.0.0)
-- [x] Advanced mode
-- [x] Digital Cymatics Equation Generator
-- [x] Basic API
-- [x] Shader-based rendering for speed (v3.0.0)
-- [x] More precise pan and zoom controls
-- [x] More control over color (v4.0.0)
-- [x] Mandelbrot set (v4.2.0)
-- [x] Julia set (v4.3.0)
-- [x] Improved fractal rendering at deep zoom
-- [ ] More transfer function controls
-- [ ] Animation
+```sh
+npm install
+npm run dev     # dev server
+npm run build   # dist/
+```
 
-# Author
+Pushing to `main` deploys to GitHub Pages (Settings → Pages → Source: GitHub Actions).
 
-Caleb Madrigal (https://gods.art).
+## Author
 
+[Caleb Madrigal](https://github.com/calebmadrigal)

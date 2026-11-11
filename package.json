@@ -1,26 +1,21 @@
 {
+  "name": "fuzzygraph",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
-    "mathjs": "^14.6.0",
+    "mathjs": "^15.2.0",
     "nanostores": "^1.0.1"
   },
   "devDependencies": {
-    "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/postcss": "^4.1.12",
-    "@tailwindcss/typography": "^0.5.16",
-    "autoprefixer": "^10.4.21",
-    "parcel": "^2.15.4",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.12"
-  },
-  "targets": {
-    "browser": {
-      "context": "browser",
-      "includeNodeModules": true,
-      "distDir": "dist",
-      "outputFormat": "esmodule",
-      "isLibrary": false,
-      "optimize": true
-    }
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/vite": "^4.3.5",
+    "tailwindcss": "^4.3.5",
+    "vite": "^8.3.7",
+    "vite-plugin-singlefile": "^2.3.4"
   }
 }
