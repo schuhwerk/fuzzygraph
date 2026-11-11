@@ -14,10 +14,10 @@ Graphs where equations are not only exactly true, but close to true: colour grad
 ```sh
 npm install
 npm run dev     # dev server
-npm run build   # dist/
+npm run build   # docs/
 ```
 
-Pushing to `main` deploys to GitHub Pages (Settings → Pages → Source: GitHub Actions).
+GitHub Pages serves the committed `docs/` folder (Settings → Pages → Source: Deploy from a branch, `main` / `/docs`). Run `npm run build` and commit `docs/` before pushing.
 
 ## Author
 
