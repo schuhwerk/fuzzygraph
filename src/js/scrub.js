@@ -463,12 +463,7 @@ export function attachTextScrub(field) {
 export function attachSelectWheel(select) {
   if (select._scrubAttached) return;
   select._scrubAttached = true;
-  const wheelState = {};
-  select.addEventListener('wheel', (event) => {
-    if (select.disabled || wheelLatched()) return;
-    event.preventDefault();
-    const steps = wheelSteps(event, wheelState);
-    if (!steps) return;
+  attachWheelStep(select, (steps) => {
     const options = [...select.options].filter(o => !o.disabled && !('noWheel' in o.dataset));
     if (!options.length) return;
     const current = options.indexOf(select.options[select.selectedIndex]);
@@ -476,5 +471,16 @@ export function attachSelectWheel(select) {
     if (next === current) return;
     select.value = options[next].value;
     select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+// Calls onSteps(steps) for whole wheel steps over the element (positive = up).
+export function attachWheelStep(el, onSteps) {
+  const wheelState = {};
+  el.addEventListener('wheel', (event) => {
+    if (el.disabled || wheelLatched()) return;
+    event.preventDefault();
+    const steps = wheelSteps(event, wheelState);
+    if (steps) onSteps(steps);
   }, { passive: false });
 }

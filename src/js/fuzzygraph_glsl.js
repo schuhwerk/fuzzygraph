@@ -170,6 +170,27 @@ export function parsePolarEquationString(eq_str) {
   return error_func;
 }
 
+// Says why an equation cannot be graphed, or returns null if it can.
+export function describeEquationError(eq_str) {
+  const delimiter = eq_str.includes('≈') ? '≈' : '=';
+  const sides = eq_str.split(delimiter);
+  if (sides.length < 2) return 'Needs an equals sign, e.g. y = x^2';
+  if (sides.length > 2) return 'Use a single equals sign';
+  const variables = isPolarEquation(eq_str) ? 'r, t' : 'x, y';
+  for (const [index, side] of sides.entries()) {
+    const name = index === 0 ? 'Left side' : 'Right side';
+    if (side.trim() === '') return `${name} is empty`;
+    try {
+      // Parsing the side alone keeps "(char n)" positions relative to it
+      math.parse(side);
+      math.evaluate(`f(${variables}) = ${side}`, {})(0.01, 0.01);
+    } catch (err) {
+      return `${name}: ${err && err.message ? err.message : String(err)}`;
+    }
+  }
+  return null;
+}
+
 function isPolarEquation(eq_str) {
   const cleanEq = eq_str.toLowerCase().replace(/\s+/g, '');
   const polarRegex = /\br\b|\bt\b/;
@@ -850,14 +871,14 @@ function evaluateForDisplay(func, windowBounds, canvasWidth, canvasHeight, rotat
 export function drawAxes(canvas, xCenter, yCenter, xMin, xMax, yMin, yMax, options = {}) {
   const ctx = canvas.getContext('2d');
 
+  // Mid-gray, translucent lines and haloed labels stay readable on dark and
+  // light color maps without covering the graph.
   const {
-    labelBgColor = '#ffffff',
-    labelBgAlpha = 1,
-    labelPaddingPx = 3,
-    fontPx = 12,
-    gridColor = '#e3e3e3',
-    axisColor = '#e3e3e3',
-    labelColor = '#333'
+    fontPx = 11,
+    gridColor = 'rgba(128, 128, 128, 0.18)',
+    axisColor = 'rgba(128, 128, 128, 0.55)',
+    labelColor = 'rgba(255, 255, 255, 0.9)',
+    labelHaloColor = 'rgba(0, 0, 0, 0.45)',
   } = options;
 
   const dpr = window.devicePixelRatio || 1;
@@ -897,55 +918,43 @@ export function drawAxes(canvas, xCenter, yCenter, xMin, xMax, yMin, yMax, optio
   const firstX = Math.ceil(vxMin / step) * step;
   const firstY = Math.ceil(vyMin / step) * step;
 
-  ctx.lineWidth = Math.max(1, Math.floor(dpr));
+  // Thin lines centered on device pixels stay crisp
+  const lineWidth = Math.max(1, Math.round(dpr));
+  const crisp = v => Math.round(v - lineWidth / 2) + lineWidth / 2;
+
+  ctx.lineWidth = lineWidth;
   ctx.strokeStyle = gridColor;
   ctx.beginPath();
   for (let x = firstX; x <= vxMax + 1e-12; x += step) {
-    const cx = toCX(x);
+    if (Math.abs(x) < step * 1e-6) continue;
+    const cx = crisp(toCX(x));
     ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
   }
   for (let y = firstY; y <= vyMax + 1e-12; y += step) {
-    const cy = toCY(y);
+    if (Math.abs(y) < step * 1e-6) continue;
+    const cy = crisp(toCY(y));
     ctx.moveTo(0, cy); ctx.lineTo(W, cy);
   }
   ctx.stroke();
 
   ctx.strokeStyle = axisColor;
-  ctx.lineWidth = Math.max(1.5, 1.5 * dpr);
-  if (vxMin <= 0 && 0 <= vxMax) { ctx.beginPath(); ctx.moveTo(toCX(0), 0); ctx.lineTo(toCX(0), H); ctx.stroke(); }
-  if (vyMin <= 0 && 0 <= vyMax) { ctx.beginPath(); ctx.moveTo(0, toCY(0)); ctx.lineTo(W, toCY(0)); ctx.stroke(); }
+  ctx.beginPath();
+  if (vxMin <= 0 && 0 <= vxMax) { ctx.moveTo(crisp(toCX(0)), 0); ctx.lineTo(crisp(toCX(0)), H); }
+  if (vyMin <= 0 && 0 <= vyMax) { ctx.moveTo(0, crisp(toCY(0))); ctx.lineTo(W, crisp(toCY(0))); }
+  ctx.stroke();
 
-  const pad = labelPaddingPx * dpr;
-  ctx.font = `${Math.round(fontPx * dpr)}px sans-serif`;
+  ctx.font = `${Math.round(fontPx * dpr)}px ui-sans-serif, system-ui, sans-serif`;
 
   function drawLabel(text, x, y, {align='left', baseline='alphabetic'} = {}) {
     ctx.save();
     ctx.textAlign = align;
     ctx.textBaseline = baseline;
-
-    const m = ctx.measureText(text);
-    const w = m.width;
-    const ascent = m.actualBoundingBoxAscent ?? Math.ceil(0.8 * fontPx * dpr);
-    const descent = m.actualBoundingBoxDescent ?? Math.ceil(0.2 * fontPx * dpr);
-    const h = ascent + descent;
-
-    let rx = x, ry = y;
-    if (align === 'center') rx -= w / 2;
-    else if (align === 'right') rx -= w;
-
-    if (baseline === 'middle') ry -= h / 2;
-    else if (baseline === 'top' || baseline === 'hanging') ;
-    else if (baseline === 'alphabetic' || baseline === 'ideographic') ry -= ascent;
-    else if (baseline === 'bottom') ry -= h;
-
-    ctx.globalAlpha = labelBgAlpha;
-    ctx.fillStyle = labelBgColor;
-    ctx.fillRect(rx - pad, ry - pad, w + 2*pad, h + 2*pad);
-
-    ctx.globalAlpha = 1;
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.5 * dpr;
+    ctx.strokeStyle = labelHaloColor;
+    ctx.strokeText(text, x, y);
     ctx.fillStyle = labelColor;
     ctx.fillText(text, x, y);
-
     ctx.restore();
   }
 
@@ -1015,7 +1024,7 @@ export function validateFuzzyFunction(expression) {
   }
 }
 
-function createColormapLUT(colormapName, reverseColor, invertColor, colorStart = 0, colorCycles = 1, hueShiftDegrees = 0, saturationPercent = 0, luminosityPercent = 0) {
+export function createColormapLUT(colormapName, reverseColor, invertColor, colorStart = 0, colorCycles = 1, hueShiftDegrees = 0, saturationPercent = 0, luminosityPercent = 0) {
   const lut = new Uint8Array(256 * 4);
   const mapper = getMatplotlibColormap(
     0,

@@ -1,10 +1,13 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 
+/* The panel and its menus are dark when they (or an ancestor) carry .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html, body {
-      height: 100%;
-      overflow: hidden;             /* stop page scroll */
-      overscroll-behavior: none;    /* stop pull-to-refresh/bounce */
+    height: 100%;
+    overflow: hidden;             /* stop page scroll */
+    overscroll-behavior: none;    /* stop pull-to-refresh/bounce */
 }
 
 #mainCanvas {
@@ -13,46 +16,196 @@ html, body {
     user-select: none;
 }
 
+@layer components {
+    /* Panel layout */
+    .panel-section {
+        @apply pt-4 mt-4 border-t border-zinc-100 first:border-t-0 first:mt-0;
+    }
+    .section-title {
+        @apply flex items-center gap-1.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500;
+    }
+    .help-btn {
+        @apply inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold normal-case
+               text-zinc-400 ring-1 ring-zinc-300 hover:text-indigo-600 hover:ring-indigo-400 cursor-pointer;
+    }
+    .field-label {
+        @apply block mb-1 text-xs font-medium text-zinc-600;
+    }
+    .hint {
+        @apply mt-1.5 text-[11px] leading-snug text-zinc-400;
+    }
+    .link {
+        @apply text-indigo-600 underline decoration-indigo-300 hover:text-indigo-800;
+    }
+
+    /* Form fields */
+    .field {
+        @apply block w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900
+               shadow-xs placeholder:text-zinc-400
+               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 focus:outline-none;
+    }
+    select.field {
+        @apply pr-8;
+    }
+    .field[aria-invalid="true"] { @apply border-red-500 focus:ring-red-500/30; }
+    /* Multi-line code field that grows with its content (height set from JS) */
+    .code-field {
+        @apply font-mono text-[13px] leading-relaxed resize-none overflow-hidden;
+        overflow-wrap: anywhere;
+        word-break: break-all;
+    }
+    .clear-btn {
+        @apply absolute inset-y-0 right-1 my-auto h-5 w-5 rounded text-base leading-none
+               text-zinc-400 hover:text-zinc-800 hover:bg-zinc-100 cursor-pointer;
+    }
+
+    /* Small pill buttons */
+    .chip {
+        @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer
+               text-zinc-700 bg-zinc-100 ring-1 ring-zinc-200 hover:bg-zinc-200 hover:text-zinc-900;
+    }
+
+    /* Header icon buttons */
+    .icon-btn {
+        @apply inline-flex items-center justify-center w-8 h-8 rounded-md text-zinc-300
+               hover:text-white hover:bg-white/10 cursor-pointer;
+    }
+    .icon-btn svg, .map-btn svg, .chip svg, summary svg, #colorMapButton svg {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .icon-btn svg { @apply w-5 h-5; }
+
+    .icon-btn:disabled {
+        @apply opacity-35 cursor-default hover:bg-transparent hover:text-zinc-300;
+    }
+
+    /* Floating menus (functions, color maps) */
+    .popover {
+        @apply fixed z-[1000] bg-white rounded-xl shadow-2xl ring-1 ring-black/10 p-2.5;
+    }
+    .fn-group + .fn-group { @apply mt-2.5; }
+    .fn-group h4 {
+        @apply mb-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400;
+    }
+    .fn-row {
+        @apply flex flex-wrap gap-1;
+    }
+    .fn {
+        @apply grow min-w-11 px-2 py-1.5 rounded-md text-[13px] font-mono text-zinc-800 bg-zinc-50 ring-1 ring-zinc-200
+               hover:bg-indigo-50 hover:ring-indigo-300 hover:text-indigo-900 cursor-pointer whitespace-nowrap;
+    }
+    .fn-wide { @apply font-sans; }
+    .cmap-option {
+        @apply flex w-full items-center gap-2 px-2 py-1 rounded-md text-sm text-left text-zinc-700 cursor-pointer;
+    }
+    .cmap-option[aria-selected="true"] { @apply font-semibold text-zinc-950; }
+    .cmap-option.active { @apply bg-indigo-50 ring-1 ring-indigo-200; }
+    .cmap-option canvas { @apply min-w-0 flex-1 h-3.5 rounded-sm ring-1 ring-black/10; }
+
+    /* Help text */
+    .help-body { @apply text-sm leading-relaxed text-zinc-700; }
+    .help-body section { @apply scroll-mt-2; }
+    .help-body section + section { @apply mt-5 pt-4 border-t border-zinc-100; }
+    .help-body h3 { @apply mb-1.5 text-base font-semibold text-zinc-900; }
+    .help-body p + p { @apply mt-2; }
+    .help-body dt { @apply text-zinc-900 whitespace-nowrap; }
+    code { @apply font-mono text-[0.9em] bg-zinc-100 text-zinc-800 px-1 py-0.5 rounded; }
+    kbd { @apply font-mono text-[0.85em] bg-zinc-100 ring-1 ring-zinc-300 px-1 rounded; }
+
+    /* Floating buttons over the graph */
+    .map-group {
+        @apply flex flex-col rounded-lg overflow-hidden shadow-md ring-1 ring-black/10 divide-y divide-zinc-200;
+    }
+    .map-btn {
+        @apply flex items-center justify-center w-9 h-9 bg-white/90 backdrop-blur text-zinc-700
+               hover:bg-white hover:text-zinc-950 cursor-pointer;
+    }
+    .map-btn:not(.map-group .map-btn) {
+        @apply rounded-lg shadow-md ring-1 ring-black/10;
+    }
+    .map-btn svg { @apply w-5 h-5; }
+
+    /* On/off switch; state comes from aria-checked */
+    .switch {
+        @apply relative inline-flex shrink-0 w-9 h-5 rounded-full bg-zinc-300 transition-colors cursor-pointer
+               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50;
+    }
+    .switch::after {
+        content: '';
+        @apply absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform;
+    }
+    .switch[aria-checked="true"] { @apply bg-indigo-600; }
+    .switch[aria-checked="true"]::after { @apply translate-x-4; }
+    .switch-row {
+        @apply flex items-center justify-between gap-2 py-1 text-sm text-zinc-700;
+    }
+
+    /* Range slider */
+    .range {
+        @apply w-full h-1.5 rounded-full bg-zinc-200 appearance-none cursor-pointer accent-indigo-600;
+    }
+    .range::-webkit-slider-thumb {
+        @apply appearance-none w-4 h-4 rounded-full bg-white border-2 border-indigo-600 shadow;
+    }
+    .range::-moz-range-thumb {
+        @apply w-3.5 h-3.5 rounded-full bg-white border-2 border-indigo-600 shadow;
+    }
+    .range::-moz-range-progress {
+        @apply h-1.5 rounded-full bg-indigo-600;
+    }
+}
+
+/* Dark panel theme */
+@layer components {
+    .dark { color-scheme: dark; }
+    .dark .panel-section { @apply border-zinc-800; }
+    .dark .help-btn { @apply text-zinc-500 ring-zinc-700 hover:text-indigo-300 hover:ring-indigo-400; }
+    .dark .field-label { @apply text-zinc-400; }
+    .dark .hint { @apply text-zinc-500; }
+    .dark .link { @apply text-indigo-300 decoration-indigo-400/50 hover:text-indigo-200; }
+    .dark .field {
+        @apply border-zinc-700 bg-zinc-950/60 text-zinc-100 shadow-none placeholder:text-zinc-500
+               focus:border-indigo-400 focus:ring-indigo-400/25;
+    }
+    .dark .field[aria-invalid="true"] { @apply border-red-400; }
+    .dark .clear-btn { @apply text-zinc-500 hover:text-zinc-100 hover:bg-zinc-700; }
+    .dark .chip { @apply text-zinc-200 bg-zinc-800 ring-zinc-700 hover:bg-zinc-700 hover:text-white; }
+    .dark .switch { @apply bg-zinc-700; }
+    .dark .switch[aria-checked="true"] { @apply bg-indigo-500; }
+    .dark .switch-row { @apply text-zinc-300; }
+    .dark .range { @apply bg-zinc-700 accent-indigo-400; }
+    .dark .range::-webkit-slider-thumb { @apply bg-zinc-900 border-indigo-400; }
+    .dark .range::-moz-range-thumb { @apply bg-zinc-900 border-indigo-400; }
+    .dark .range::-moz-range-progress { @apply bg-indigo-400; }
+    .dark.popover { @apply bg-zinc-900 ring-white/10; }
+    .dark .fn-group h4 { @apply text-zinc-500; }
+    .dark .fn { @apply text-zinc-200 bg-zinc-800 ring-zinc-700 hover:bg-indigo-500/20 hover:ring-indigo-400/60 hover:text-white; }
+    .dark .cmap-option { @apply text-zinc-300; }
+    .dark .cmap-option[aria-selected="true"] { @apply text-white; }
+    .dark .cmap-option.active { @apply bg-indigo-500/15 ring-indigo-400/40; }
+    .dark .cmap-option canvas { @apply ring-white/10; }
+    .dark kbd { @apply bg-zinc-800 ring-zinc-600 text-zinc-300; }
+    .dark code { @apply bg-zinc-800 text-zinc-200; }
+}
+
+summary::-webkit-details-marker { display: none; }
+
 .coords {
     position: absolute;
-    left: 6px;
-    top: 6px;
+    left: 12px;
+    bottom: 12px;
     padding: 4px 8px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(24, 24, 27, 0.75);
     color: #fff;
     font: 12px/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     pointer-events: none;
     user-select: none;
     display: none;
-}
-
-.tooltip-button {
-    position: relative;
-    padding: 10px 20px;
-    cursor: pointer;
-}
-
-.tooltip-button::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #333;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
-}
-
-.tooltip-button:hover::after {
-    opacity: 1;
-    visibility: visible;
 }
 
 /* Remove number input arrows (Chrome, Safari, Edge, Opera) */

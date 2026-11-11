@@ -7,7 +7,7 @@ Graphs where equations are not only exactly true, but close to true: colour grad
 - One self-contained HTML file; runs offline, no tracking
 - The URL always holds the current graph (reload, bookmark, share)
 - Saved PNGs embed the graph settings and can be reopened
-- Cymatics, Mandelbrot and Julia generators (Equation → +)
+- Cymatics, Mandelbrot and Julia generators (Equation → Functions)
 
 ## Development
 

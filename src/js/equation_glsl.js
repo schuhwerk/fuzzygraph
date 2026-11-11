@@ -4,6 +4,9 @@ import { parse } from 'mathjs';
 // complete left and right sides have been evaluated, just like the CPU path.
 export const COMPLEX_GLSL = `
 const float fgPi = 3.141592653589793;
+float fgMod(float a, float b) { return b == 0.0 ? a : a - b * floor(a / b); }
+// Halves round away from zero, as in mathjs (GLSL round() leaves this open)
+float fgRound(float a) { return sign(a) * floor(abs(a) + 0.5); }
 vec2 fgMul(vec2 a, vec2 b) {
   return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x);
 }
@@ -83,6 +86,14 @@ vec2 fgAtan(vec2 z) {
   vec2 iz = vec2(-z.y, z.x);
   vec2 w = fgLog(vec2(1.0, 0.0) - iz) - fgLog(vec2(1.0, 0.0) + iz);
   return vec2(-w.y, w.x)*0.5;
+}
+vec2 fgAcosh(vec2 z) {
+  if (z.y == 0.0 && z.x >= 1.0) return vec2(acosh(z.x), 0.0);
+  return fgLog(z + fgMul(fgSqrt(z - vec2(1.0, 0.0)), fgSqrt(z + vec2(1.0, 0.0))));
+}
+vec2 fgAtanh(vec2 z) {
+  if (z.y == 0.0 && abs(z.x) < 1.0) return vec2(atanh(z.x), 0.0);
+  return 0.5 * (fgLog(vec2(1.0, 0.0) + z) - fgLog(vec2(1.0, 0.0) - z));
 }
 `;
 
@@ -188,8 +199,41 @@ function createCompiler(symbols) {
       return args.slice(1).reduce((a, b) => emit(`${name}(${a.code}, ${b.code})`, false,
         name === 'max' ? a.nonnegative || b.nonnegative : a.nonnegative && b.nonnegative), args[0]);
     }
+    if (name === 'hypot') {
+      if (args.length < 1 || args.some(a => a.complex)) throw new Error('hypot requires real arguments.');
+      if (args.length === 1) return emit(`abs(${args[0].code})`, false, true);
+      if (args.length <= 4) return emit(`length(vec${args.length}(${args.map(a => a.code).join(', ')}))`, false, true);
+      return emit(`sqrt(${args.map(a => `${a.code} * ${a.code}`).join(' + ')})`, false, true);
+    }
+    if (name === 'mod' && args.length === 2) {
+      if (args.some(a => a.complex)) throw new Error('mod requires real arguments.');
+      // mathjs: x - y * floor(x / y), and mod(x, 0) = x
+      return emit(`fgMod(${args[0].code}, ${args[1].code})`, false, args[0].nonnegative && args[1].nonnegative);
+    }
+    if (name === 'round' && args.length === 2) {
+      const digits = args[1].constant;
+      if (args[0].complex || !Number.isInteger(digits) || digits < 0 || digits > 15) {
+        throw new Error('round(x, n) requires a real x and a constant n.');
+      }
+      const scale = numberLiteral(10 ** digits);
+      return emit(`(fgRound(${args[0].code} * ${scale}) / ${scale})`, false, args[0].nonnegative);
+    }
     if (args.length !== 1) throw new Error(`Unsupported arguments for ${name}.`);
     const a = args[0];
+    if (!a.complex) {
+      // Real in, real out for every real argument; matches mathjs.
+      if (name === 'floor' || name === 'ceil') return emit(`${name}(${a.code})`, false, a.nonnegative);
+      if (name === 'round') return emit(`fgRound(${a.code})`, false, a.nonnegative);
+      if (name === 'sign') return emit(`sign(${a.code})`, false, a.nonnegative);
+      if (name === 'sinh' || name === 'tanh' || name === 'asinh') return emit(`${name}(${a.code})`, false, a.nonnegative);
+      if (name === 'cosh') return emit(`cosh(${a.code})`, false, true);
+      if (name === 'cbrt') return emit(`(sign(${a.code}) * pow(abs(${a.code}), ${numberLiteral(1 / 3)}))`, false, a.nonnegative);
+    }
+    // Complex for real arguments outside [1, inf) and (-1, 1) respectively
+    if (name === 'acosh') return emit(`fgAcosh(${asComplex(a)})`, true);
+    if (name === 'atanh') return emit(`fgAtanh(${asComplex(a)})`, true);
+    if (name === 'log10') return binary('/', logarithm(a), literal(Math.LN10));
+    if (name === 'log2') return binary('/', logarithm(a), literal(Math.LN2));
     if (name === 'sqrt') return power(a, literal(0.5));
     if (name === 'log' || name === 'ln') return logarithm(a);
     if (name === 'abs') return emit(`${a.complex ? 'length' : 'abs'}(${a.code})`, false, true);

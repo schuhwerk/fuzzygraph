@@ -1,3 +1,4 @@
+import { PAGE_HTML } from './js/page_snapshot.js';
 import { atom, map } from "nanostores";
 import { matplotlibColorData } from "./js/ga_color.js";
 import {
@@ -15,13 +16,15 @@ import {
     parseJuliaParams,
     DEFAULT_FUZZY_FUNCTION,
     FUZZY_FUNCTION_PRESETS,
-    validateFuzzyFunction
+    validateFuzzyFunction,
+    createColormapLUT,
+    describeEquationError
 } from './js/fuzzygraph_glsl.js';
 import {
     uniformly_distributed_points,
     cymatics_equation_generator
 } from './js/cymatics.js';
-import { attachInputScrub, attachTextScrub, attachSelectWheel } from './js/scrub.js';
+import { attachInputScrub, attachTextScrub, attachSelectWheel, attachWheelStep } from './js/scrub.js';
 
 const yHeightAtZoom1 = 6;
 const defaultMaxOverride = 5;
@@ -87,7 +90,6 @@ const minOverride = atom(null);
 const maxOverride = atom(defaultMaxOverride);
 
 const sidebarOpen = atom(true);
-const mobileMenuOpen = atom(false);
 
 const hoverMsg = atom('Loading...');
 const showError = atom(false);
@@ -98,10 +100,6 @@ const showSaveModal = atom(false);
 const showGotoModal = atom(false);
 const showOpenModal = atom(false);
 const showHelpModal = atom(false);
-const showEquationHelpModal = atom(false);
-const showControlsHelpModal = atom(false);
-const showColorMapHelpModal = atom(false);
-const showAdvancedHelpModal = atom(false);
 const showEquationModal = atom(false);
 const showCymaticsModal = atom(false);
 const showMandelbrotModal = atom(false);
@@ -243,15 +241,11 @@ function debounceLatest(fn, delay) {
     };
 }
 
-function getEquationErrorDetails(equationStr) {
-    if (!equationStr.includes('=') && !equationStr.includes('≈')) {
-        return ' - equation must have an equals sign (=)'
-    } else if (!equationStr.includes('x') && !equationStr.includes('y') && !equationStr.includes('r')) {
-        return ' - equation should include x or y (probably both)'
-    }
-    else {
-        return '';
-    }
+const equationErrorEl = document.getElementById('equationError');
+function setEquationError(message) {
+    equationErrorEl.textContent = message || '';
+    equationErrorEl.classList.toggle('hidden', !message);
+    document.getElementById('equationInput').setAttribute('aria-invalid', String(!!message));
 }
 
 function paintGraph() {
@@ -292,20 +286,25 @@ function paintGraph() {
         
         stopLoading();
         syncUrl();
+        recordHistory();
         getGraphValueAt = graphResult.getValueAt;
         showFuzzyFunctionError(graphResult.fuzzyFunctionError);
+        setEquationError(null);
         // hoverMsg.set('');
         // document.getElementById('hoverMsgDiv').style.display = 'none';
     } else {
         document.getElementById('hoverMsgDiv').style.display = 'block';
 
         if (getStrippedEquation() === untrustedEquation) {
-            hoverMsg.set('JavaScript equations from links and images do not run automatically. Edit the equation to run it.');
+            const message = 'JavaScript equations from links and images do not run automatically. Edit the equation to run it.';
+            hoverMsg.set(message);
+            setEquationError(message);
             return;
         }
-        // TODO: More particular message
-        const errorDetails = getEquationErrorDetails(getStrippedEquation());
-        hoverMsg.set('Equation is invalid' + errorDetails);
+        const { equation: baseEquation } = parseRotationWrapper(equation.get().trim());
+        const message = describeEquationError(baseEquation) || 'This equation cannot be graphed';
+        hoverMsg.set(`Equation is invalid: ${message}`);
+        setEquationError(message);
     }
 }
 
@@ -342,8 +341,7 @@ function scheduleRepaint() {
 
 // Download FuzzyGraph
 function downloadFuzzygraph() {
-    const htmlContent = document.documentElement.outerHTML;
-    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const blob = new Blob([PAGE_HTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -768,81 +766,41 @@ function rotatePointAroundOrigin(x, y, radians) {
 lastRotationRadians = toRadians(rotationDegrees.get());
 
 minVal.subscribe((minV) => {
-    document.getElementById('minDisplay').textContent = formatNumber(minV);
+    document.getElementById('minOverrideInput').placeholder = `min · ${formatNumber(minV)}`;
 });
 
 maxVal.subscribe((maxV) => {
-    document.getElementById('maxDisplay').textContent = formatNumber(maxV);
+    document.getElementById('maxOverrideInput').placeholder = `max · ${formatNumber(maxV)}`;
 });
 
 const minToggle = document.getElementById("minOverrideToggle");
-const minKnob = minToggle.querySelector(".knob");
 const minInput = document.getElementById("minOverrideInput");
 
 const maxToggle = document.getElementById("maxOverrideToggle");
-const maxKnob = maxToggle.querySelector(".knob");
 const maxInput = document.getElementById("maxOverrideInput");
 
 let minInputHasFocus = false;
 let maxInputHasFocus = false;
 let updatingRotationFromEquation = false;
 
+// An override is "enabled" while it has a value or is being edited; the clear
+// button only shows when there is a value to clear.
 function setMinOverrideEnabled(enabled) {
-    minToggle.setAttribute("aria-pressed", String(enabled));
-    minInput.readOnly = !enabled;
-    minInput.setAttribute("aria-disabled", String(!enabled));
-
-    if (enabled) {
-        // ON: dark track, light knob, knob right (advanced-style)
-        minToggle.classList.remove("bg-gray-500");
-        minToggle.classList.add("bg-gray-800");
-        minKnob.classList.remove("translate-x-1", "bg-gray-700");
-        minKnob.classList.add("translate-x-5", "bg-gray-50");
-        minInput.classList.remove("bg-gray-100", "text-gray-500");
-    } else {
-        // OFF: medium track, dark knob, knob left
-        minToggle.classList.remove("bg-gray-800");
-        minToggle.classList.add("bg-gray-500");
-        minKnob.classList.remove("translate-x-5", "bg-gray-50");
-        minKnob.classList.add("translate-x-1", "bg-gray-700");
-        minInput.classList.add("bg-gray-100", "text-gray-500");
-
-        minOverride.set(null);
-    }
+    minToggle.classList.toggle('hidden', !(enabled && minInput.value !== ''));
+    if (!enabled) minOverride.set(null);
 }
 
 function setMaxOverrideEnabled(enabled) {
-    maxToggle.setAttribute("aria-pressed", String(enabled));
-    maxInput.readOnly = !enabled;
-    maxInput.setAttribute("aria-disabled", String(!enabled));
-
-    if (enabled) {
-        // ON: dark track, light knob, knob right (advanced-style)
-        maxToggle.classList.remove("bg-gray-500");
-        maxToggle.classList.add("bg-gray-800");
-        maxKnob.classList.remove("translate-x-1", "bg-gray-700");
-        maxKnob.classList.add("translate-x-5", "bg-gray-50");
-        maxInput.classList.remove("bg-gray-100", "text-gray-500");
-    } else {
-        // OFF: medium track, dark knob, knob left
-        maxToggle.classList.remove("bg-gray-800");
-        maxToggle.classList.add("bg-gray-500");
-        maxKnob.classList.remove("translate-x-5", "bg-gray-50");
-        maxKnob.classList.add("translate-x-1", "bg-gray-700");
-        maxInput.classList.add("bg-gray-100", "text-gray-500");
-
-        maxOverride.set('');
-    }
+    maxToggle.classList.toggle('hidden', !(enabled && maxInput.value !== ''));
+    if (!enabled) maxOverride.set('');
 }
 
 function toggleMinOverride() {
-    const isOn = minToggle.getAttribute("aria-pressed") === "true";
-    setMinOverrideEnabled(!isOn);
+    setMinOverrideEnabled(false);
 }
 
 function toggleMaxOverride() {
-    const isOn = maxToggle.getAttribute("aria-pressed") === "true";
-    setMaxOverrideEnabled(!isOn);
+    setMaxOverrideEnabled(false);
 }
 
 minToggle.addEventListener("click", toggleMinOverride);
@@ -1008,67 +966,29 @@ document.getElementById('saveImageButton').addEventListener('click', async () =>
     saveImage();
 });
 
-function setMode(advancedMode) {
-    const checked = advancedMode;
-    const btn = document.getElementById('modeToggle');
-    const thumb = document.getElementById('modeThumb');
-    const advancedControlsSection = document.getElementById('advancedControlsSection');
-    const advancedColorSection = document.getElementById('advancedColorSection');
-    const label = document.getElementById('modeLabel');
+const advancedSection = document.getElementById('advancedSection');
 
-    btn.setAttribute('aria-checked', String(checked));
-
-    // Track and thumb color
-    if (checked) {
-        btn.classList.remove('bg-gray-500');
-        btn.classList.add('bg-gray-800');
-        // thumb.classList.remove('bg-gray-700');
-        // thumb.classList.add('bg-gray-50');
-        advancedControlsSection.classList.remove('hidden');
-        advancedColorSection.classList.remove('hidden');
-        label.textContent = 'Advanced';
-    } else {
-        btn.classList.remove('bg-gray-800');
-        btn.classList.add('bg-gray-500');
-        // thumb.classList.remove('bg-gray-50');
-        // thumb.classList.add('bg-gray-700');
-        advancedControlsSection.classList.add('hidden');
-        advancedColorSection.classList.add('hidden');
-        label.textContent = 'Basic';
-
+function setMode(checked) {
+    if (advancedSection.open !== checked) advancedSection.open = checked;
+    if (!checked) {
         // Clear min and max overrides since they are no longer visible
         clearMinAndMaxOverrides();
     }
-
-    // Thumb position
-    thumb.classList.toggle('translate-x-1', !checked);
-    thumb.classList.toggle('translate-x-7', checked);
 }
 
-function toggleMode() {
-    const nextMode = document.getElementById('modeToggle').getAttribute('aria-checked') !== 'true';
-    advancedMode.set(nextMode);
-}
-
-document.getElementById('modeToggle').addEventListener('click', toggleMode);
-
+advancedSection.addEventListener('toggle', () => {
+    if (advancedMode.get() !== advancedSection.open) advancedMode.set(advancedSection.open);
+});
 
 advancedMode.subscribe((checked) => {
     setMode(checked);
 });
 
-saveShowAxes.subscribe((show) => {
-    const slider = document.getElementById('saveAxesOnSlider');
-    const toggleEl = document.getElementById('saveAxesToggle');
+function setSwitch(id, on) {
+    document.getElementById(id).setAttribute('aria-checked', String(!!on));
+}
 
-    slider.classList.remove('translate-x-1', 'translate-x-7');
-    slider.classList.add(show ? 'translate-x-7' : 'translate-x-1');
-
-    toggleEl.classList.remove('bg-gray-500', 'bg-gray-800', 'bg-blue-600', 'bg-gray-200');
-    toggleEl.classList.add(show ? 'bg-gray-800' : 'bg-gray-500');
-
-    toggleEl.setAttribute('aria-checked', show);
-});
+saveShowAxes.subscribe((show) => setSwitch('saveAxesToggle', show));
 
 document.getElementById('saveWidthInput').addEventListener('input', (event) => {
     saveWidth.set(event.target.value);
@@ -1170,10 +1090,7 @@ document.addEventListener('keydown', (event) => {
         showSaveModal.set(false);
         showOpenModal.set(false);
         showHelpModal.set(false);
-        showEquationHelpModal.set(false);
-        showControlsHelpModal.set(false);
-        showColorMapHelpModal.set(false);
-        showAdvancedHelpModal.set(false);
+        closeColorMapList();
         showEquationModal.set(false);
         showCymaticsModal.set(false);
         showGotoModal.set(false);
@@ -1226,13 +1143,9 @@ document.getElementById('shareUrlInput').addEventListener('copy', function (e) {
 document.getElementById('showShareButton').addEventListener('click', () => { showShareModal.set(!showShareModal.get()); });
 document.getElementById('showSaveButton').addEventListener('click', () => { showSaveModal.set(!showSaveModal.get()); });
 document.getElementById('showOpenButton').addEventListener('click', () => { showOpenModal.set(!showOpenModal.get()); });
-document.getElementById('showHelpButton').addEventListener('click', () => { showHelpModal.set(!showHelpModal.get()); });
+document.getElementById('showHelpButton').addEventListener('click', () => { if (showHelpModal.get()) showHelpModal.set(false); else openHelp(); });
 
 // Mobile menu buttons
-document.getElementById('mobileShowShareButton').addEventListener('click', () => { showShareModal.set(!showShareModal.get()); });
-document.getElementById('mobileShowSaveButton').addEventListener('click', () => { showSaveModal.set(!showSaveModal.get()); });
-document.getElementById('mobileShowOpenButton').addEventListener('click', () => { showOpenModal.set(!showOpenModal.get()); });
-document.getElementById('mobileShowHelpButton').addEventListener('click', () => { showHelpModal.set(!showHelpModal.get()); });
 
 // Modal X buttons
 document.getElementById('shareModalX').addEventListener('click', () => { showShareModal.set(false); });
@@ -1257,60 +1170,98 @@ document.getElementById('gotoSubmitButton').addEventListener('click', () => {
     showGotoModal.set(false);
 });
 
-// Mobile top menu
-mobileMenuOpen.subscribe((visible) => {
-    document.getElementById('mobileMenu').classList.toggle('hidden', !visible);
-});
-
-document.getElementById('mobileMenuButton').addEventListener('click', () => { mobileMenuOpen.set(!mobileMenuOpen.get()); });
-
-// document.getElementById('controlPanel').addEventListener('transitionend', (e) => {
-//     if (e.propertyName === 'left' || e.propertyName === 'transform' || e.propertyName === 'width') {
-//         // Layout is final now
-//         resizeCanvas();
-//     }
-// });
-
 // CONTROL PANEL
+const controlPanel = document.getElementById('controlPanel');
+
 sidebarOpen.subscribe((visible) => {
-    // TODO: Do this using simple visibility?
-    document.getElementById('overCanvasControls').classList.remove('md:ml-64', 'md:ml-0');
-    document.getElementById('overCanvasControls').classList.add(visible ? 'md:ml-64' : 'md:ml-0');
-
-    document.getElementById('openControlPanelButton').classList.remove('opacity-0', 'pointer-events-none', 'opacity-100');
-    if (visible) {
-        document.getElementById('openControlPanelButton').classList.add('opacity-0', 'pointer-events-none');
-    } else {
-        document.getElementById('openControlPanelButton').classList.add('opacity-100');
-    }
-
-    document.getElementById('controlPanel').classList.remove('bottom-0', 'md:bottom-auto', 'md:top-16',
-        'md:left-0', 'bottom-[-1000px]', 'md:bottom-auto',
-        'md:top-16', 'md:left-[-1000px]');
-    if (visible) {
-        document.getElementById('controlPanel').classList.add('bottom-0', 'md:bottom-auto', 'md:top-16', 'md:left-0');
-    } else {
-        document.getElementById('controlPanel').classList.add('bottom-[-1000px]', 'md:bottom-auto', 'md:top-16', 'md:left-[-1000px]');
-    }
-
-    document.getElementById('mobileShowControlPanelButton').classList.remove('opacity-0', 'pointer-events-none', 'opacity-100');
-
-    if (visible) {
-        document.getElementById('mobileShowControlPanelButton').classList.add('opacity-0', 'pointer-events-none');
-    } else {
-        document.getElementById('mobileShowControlPanelButton').classList.add('opacity-100');
-    }
+    controlPanel.classList.toggle('hidden', !visible);
+    document.getElementById('openControlPanelButton').classList.toggle('hidden', visible);
+    if (visible) requestAnimationFrame(autosizeCodeFields);
 });
 
-document.getElementById('mobileShowControlPanelButton').addEventListener('click', () => { sidebarOpen.set(true); });
 document.getElementById('openControlPanelButton').addEventListener('click', () => { sidebarOpen.set(true); });
 document.getElementById('hideControlPanelButton').addEventListener('click', () => { sidebarOpen.set(false); });
+
+// Panel theme: dark unless the user switched to light (remembered)
+const THEME_KEY = 'fuzzygraph.panelTheme';
+const themeToggle = document.getElementById('themeToggle');
+function setPanelTheme(theme) {
+    const dark = theme !== 'light';
+    for (const id of ['controlPanel', 'mathPopover', 'colorMapList']) {
+        document.getElementById(id).classList.toggle('dark', dark);
+    }
+    themeToggle.textContent = dark ? 'Light panel' : 'Dark panel';
+}
+setPanelTheme(localStorage.getItem(THEME_KEY));
+themeToggle.addEventListener('click', () => {
+    const next = controlPanel.classList.contains('dark') ? 'light' : 'dark';
+    localStorage.setItem(THEME_KEY, next);
+    setPanelTheme(next);
+});
+
+// Drag the panel edge to resize it (desktop); the width is remembered.
+const PANEL_WIDTH_KEY = 'fuzzygraph.panelWidth';
+function setPanelWidth(px) {
+    const max = Math.max(280, Math.min(900, window.innerWidth * 0.7));
+    const w = Math.round(Math.min(max, Math.max(260, px)));
+    controlPanel.style.setProperty('--panel-w', `${w}px`);
+    return w;
+}
+{
+    const saved = Number(localStorage.getItem(PANEL_WIDTH_KEY));
+    if (saved > 0) setPanelWidth(saved);
+
+    const resizer = document.getElementById('panelResizer');
+    resizer.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        resizer.setPointerCapture(event.pointerId);
+        const left = controlPanel.getBoundingClientRect().left;
+        const move = (e) => setPanelWidth(e.clientX - left);
+        const up = (e) => {
+            resizer.removeEventListener('pointermove', move);
+            resizer.removeEventListener('pointerup', up);
+            resizer.removeEventListener('pointercancel', up);
+            localStorage.setItem(PANEL_WIDTH_KEY, String(setPanelWidth(e.clientX - left)));
+        };
+        resizer.addEventListener('pointermove', move);
+        resizer.addEventListener('pointerup', up);
+        resizer.addEventListener('pointercancel', up);
+    });
+    resizer.addEventListener('dblclick', () => {
+        controlPanel.style.removeProperty('--panel-w');
+        localStorage.removeItem(PANEL_WIDTH_KEY);
+    });
+}
+
+// Equation and fuzzy function fields grow to show the whole expression.
+function autosize(el) {
+    if (!el || !el.offsetParent) return;
+    el.style.height = 'auto';
+    const border = el.offsetHeight - el.clientHeight;
+    el.style.height = `${el.scrollHeight + border}px`;
+}
+function autosizeCodeFields() {
+    autosize(document.getElementById('equationInput'));
+    autosize(document.getElementById('fuzzyFunctionInput'));
+}
+{
+    let lastPanelWidth = 0;
+    new ResizeObserver(() => {
+        const w = controlPanel.clientWidth;
+        if (w !== lastPanelWidth) {
+            lastPanelWidth = w;
+            autosizeCodeFields();
+        }
+    }).observe(controlPanel);
+}
 
 // CONTROL PANEL / Equation
 const equationModalTextarea = document.getElementById('equationModalTextarea');
 
 equation.subscribe((eq) => {
-    document.getElementById('equationInput').value = eq;
+    const equationInputEl = document.getElementById('equationInput');
+    if (equationInputEl.value !== eq) equationInputEl.value = eq;
+    autosize(equationInputEl);
 
     if (!document.getElementById('equationModal').classList.contains('hidden') && equationModalTextarea) {
         equationModalTextarea.value = eq;
@@ -1402,13 +1353,36 @@ document.getElementById('equationModalUpdate').addEventListener('click', () => {
     showEquationModal.set(false);
 });
 
-showEquationHelpModal.listen((visible) => { document.getElementById('equationHelpModal').classList.toggle('hidden', !visible); });
-document.getElementById('equationHelpButton').addEventListener('click', () => { showEquationHelpModal.set(!showEquationHelpModal.get()); });
-document.getElementById('equationHelpModalX').addEventListener('click', () => { showEquationHelpModal.set(false); });
+// Help: one dialog; each section's "?" opens it at that section
+function openHelp(sectionId) {
+    showHelpModal.set(true);
+    const target = sectionId && document.getElementById(sectionId);
+    if (target) target.scrollIntoView({ block: 'start' });
+    else document.getElementById('helpScroll').scrollTop = 0;
+}
+for (const [buttonId, sectionId] of [
+    ['equationHelpButton', 'help-equation'], ['controlsHelpButton', 'help-fuzziness'],
+    ['colorMapHelpButton', 'help-colors'], ['advancedHelpButton', 'help-advanced'],
+]) {
+    document.getElementById(buttonId).addEventListener('click', (event) => {
+        // The Advanced help button sits in a <summary>; don't toggle the section
+        event.preventDefault();
+        event.stopPropagation();
+        openHelp(sectionId);
+    });
+}
+document.querySelectorAll('#helpModal nav a').forEach((link) => {
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        document.querySelector(link.getAttribute('href')).scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+});
 
 // CONTROL PANEL / Fuzzy
 fuzzyLevel.subscribe((fuzzyVal) => {
-    document.getElementById('fuzzyLevelDisplay').textContent = parseInt(fuzzyVal) + '%';
+    // The slider is stored as a percentage; the fuzzy function sees it as f = level / 100
+    const level = parseInt(fuzzyVal);
+    document.getElementById('fuzzyLevelDisplay').textContent = level > 0 ? (level / 100).toFixed(2) : '0 · plain lines';
     document.getElementById('fuzzyInput').value = fuzzyVal;
     scheduleRepaint();
 });
@@ -1433,14 +1407,14 @@ for (const preset of [...FUZZY_FUNCTION_PRESETS, { id: 'custom', label: 'Custom'
 function showFuzzyFunctionError(message) {
     fuzzyFunctionErrorEl.textContent = message ? `Invalid fuzzy function, using default: ${message}` : '';
     fuzzyFunctionErrorEl.classList.toggle('hidden', !message);
-    fuzzyFunctionInput.classList.toggle('border-red-500', !!message);
-    fuzzyFunctionInput.classList.toggle('border-gray-300', !message);
+    fuzzyFunctionInput.setAttribute('aria-invalid', String(!!message));
 }
 
 fuzzyFunction.subscribe((expr) => {
     if (fuzzyFunctionInput.value !== expr) {
         fuzzyFunctionInput.value = expr;
     }
+    autosize(fuzzyFunctionInput);
     const preset = FUZZY_FUNCTION_PRESETS.find(p => normalizeExpression(p.expression) === normalizeExpression(expr));
     fuzzyFunctionSelect.value = preset ? preset.id : 'custom';
     showFuzzyFunctionError(validateFuzzyFunction(expr));
@@ -1457,6 +1431,10 @@ fuzzyFunctionSelect.addEventListener('change', (event) => {
 fuzzyFunctionInput.addEventListener('input', (event) => {
     fuzzyFunction.set(event.target.value);
 });
+// Single-line expression: Enter does not insert a newline
+fuzzyFunctionInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') event.preventDefault();
+});
 
 // Drag or scroll over numbers to change them
 for (const id of ['equationInput', 'equationModalTextarea', 'fuzzyFunctionInput']) {
@@ -1465,25 +1443,12 @@ for (const id of ['equationInput', 'equationModalTextarea', 'fuzzyFunctionInput'
 }
 document.querySelectorAll('input[type="number"], #minOverrideInput, #maxOverrideInput').forEach(attachInputScrub);
 attachSelectWheel(fuzzyFunctionSelect);
-attachSelectWheel(document.getElementById('colorMapSelect'));
 
 // CONTROL PANEL / Controls Help
-showControlsHelpModal.listen((visible) => { document.getElementById('controlsHelpModal').classList.toggle('hidden', !visible); });
-document.getElementById('controlsHelpButton').addEventListener('click', () => { showControlsHelpModal.set(!showControlsHelpModal.get()); });
-document.getElementById('controlsHelpModalX').addEventListener('click', () => { showControlsHelpModal.set(false); });
 
 // CONTROL PANEL / Show Axes
 showAxes.subscribe((show) => {
-    const slider = document.getElementById('axesOnSlider');
-    const toggleEl = document.getElementById('axesToggle');
-
-    slider.classList.remove('translate-x-1', 'translate-x-7');
-    slider.classList.add(show ? 'translate-x-7' : 'translate-x-1');
-
-    toggleEl.classList.remove('bg-gray-500', 'bg-gray-800', 'bg-blue-600', 'bg-gray-200');
-    toggleEl.classList.add(show ? 'bg-gray-800' : 'bg-gray-500');
-
-    toggleEl.setAttribute('aria-checked', show);
+    setSwitch('axesToggle', show);
 
     saveShowAxes.set(show);
 });
@@ -1493,47 +1458,159 @@ document.getElementById('axesToggle').addEventListener('click', () => {
     scheduleRepaint();
 });
 
-// CONTROL PANEL / Color map
-function getColorMapList() {
-    // TODO: CUSTOM item which opens a textarea for js code function color(value, min, max)
-    // var colorMapList = Object.keys(js_colormaps_data);
-    var colorMapList = Object.keys(matplotlibColorData);
-    return colorMapList;
+// CONTROL PANEL / Color map picker: every map is previewed with the current color settings
+const COLOR_MAP_NAMES = Object.keys(matplotlibColorData);
+const colorMapButton = document.getElementById('colorMapButton');
+const colorMapList = document.getElementById('colorMapList');
+const colorMapFilter = document.getElementById('colorMapFilter');
+const colorMapOptions = document.getElementById('colorMapOptions');
+
+function colorSettingsLUT(name) {
+    return createColormapLUT(name, reverseColor.get(), invertColor.get(), colorStart.get(),
+        colorCycles.get(), hueShiftDegrees.get(), saturationPercent.get(), luminosityPercent.get());
 }
 
-const colorMapSelect = document.getElementById('colorMapSelect');
-function renderOptions(selectedValue) {
-    const colorMaps = getColorMapList();
-    colorMapSelect.innerHTML = '';
-    colorMaps.forEach((color) => {
-        const option = document.createElement('option');
-        option.value = color;
-        option.textContent = color;
-        option.selected = color === selectedValue;
-        colorMapSelect.appendChild(option);
+function paintLUT(canvasEl, lut) {
+    canvasEl.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(lut.buffer), 256, 1), 0, 0);
+}
+
+for (const name of COLOR_MAP_NAMES) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.tabIndex = -1;
+    option.className = 'cmap-option';
+    option.setAttribute('role', 'option');
+    option.dataset.value = name;
+    const label = document.createElement('span');
+    label.className = 'w-28 shrink-0 truncate';
+    label.textContent = name;
+    const preview = document.createElement('canvas');
+    preview.width = 256;
+    preview.height = 1;
+    option.append(label, preview);
+    colorMapOptions.appendChild(option);
+}
+const colorMapOptionEls = [...colorMapOptions.children];
+
+let colorMapPreviewKey = null;
+function renderColorMapPreviews() {
+    const key = JSON.stringify([reverseColor.get(), invertColor.get(), colorStart.get(), colorCycles.get(),
+        hueShiftDegrees.get(), saturationPercent.get(), luminosityPercent.get()]);
+    if (key === colorMapPreviewKey) return;
+    colorMapPreviewKey = key;
+    for (const el of colorMapOptionEls) paintLUT(el.querySelector('canvas'), colorSettingsLUT(el.dataset.value));
+}
+
+function setActiveColorMapOption(el, scroll = true) {
+    for (const option of colorMapOptionEls) option.classList.toggle('active', option === el);
+    if (el && scroll) el.scrollIntoView({ block: 'nearest' });
+}
+
+function filterColorMaps() {
+    const query = colorMapFilter.value.trim().toLowerCase();
+    for (const el of colorMapOptionEls) el.hidden = query !== '' && !el.dataset.value.toLowerCase().includes(query);
+    const active = colorMapOptions.querySelector('.active');
+    if (!active || active.hidden) setActiveColorMapOption(colorMapOptionEls.find(el => !el.hidden));
+}
+
+function isColorMapListOpen() {
+    return colorMapList.style.display !== 'none';
+}
+
+function positionColorMapList() {
+    const r = colorMapButton.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - r.bottom - 8;
+    const spaceAbove = r.top - 8;
+    const below = spaceBelow >= 260 || spaceBelow >= spaceAbove;
+    Object.assign(colorMapList.style, {
+        left: `${Math.max(6, Math.min(r.left, window.innerWidth - Math.max(r.width, 260) - 6))}px`,
+        width: `${Math.max(r.width, 260)}px`,
+        maxHeight: `${Math.min(440, below ? spaceBelow : spaceAbove)}px`,
+        top: below ? `${r.bottom + 4}px` : '',
+        bottom: below ? '' : `${window.innerHeight - r.top + 4}px`,
     });
 }
-colorMap.subscribe((value) => {
-    renderOptions(value);
-    scheduleRepaint();
+
+function onColorMapPointerOutside(event) {
+    if (!colorMapList.contains(event.target) && !colorMapButton.contains(event.target)) closeColorMapList();
+}
+
+function onColorMapScroll(event) {
+    if (!colorMapList.contains(event.target)) positionColorMapList();
+}
+
+function openColorMapList() {
+    renderColorMapPreviews();
+    colorMapFilter.value = '';
+    filterColorMaps();
+    colorMapList.style.display = 'flex';
+    colorMapButton.setAttribute('aria-expanded', 'true');
+    positionColorMapList();
+    setActiveColorMapOption(colorMapOptionEls.find(el => el.dataset.value === colorMap.get()));
+    colorMapFilter.focus();
+    document.addEventListener('pointerdown', onColorMapPointerOutside, true);
+    window.addEventListener('resize', positionColorMapList);
+    window.addEventListener('scroll', onColorMapScroll, true);
+}
+
+function closeColorMapList(refocus = false) {
+    if (!isColorMapListOpen()) return;
+    colorMapList.style.display = 'none';
+    colorMapButton.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', onColorMapPointerOutside, true);
+    window.removeEventListener('resize', positionColorMapList);
+    window.removeEventListener('scroll', onColorMapScroll, true);
+    if (refocus) colorMapButton.focus();
+}
+
+function chooseColorMap(name) {
+    colorMap.set(name);
+    closeColorMapList(true);
+}
+
+colorMapButton.addEventListener('click', () => (isColorMapListOpen() ? closeColorMapList() : openColorMapList()));
+colorMapFilter.addEventListener('input', filterColorMaps);
+colorMapOptions.addEventListener('click', (event) => {
+    const option = event.target.closest('.cmap-option');
+    if (option) chooseColorMap(option.dataset.value);
 });
-colorMapSelect.addEventListener('change', (event) => {
-    colorMap.set(event.target.value);
+colorMapOptions.addEventListener('pointermove', (event) => {
+    const option = event.target.closest('.cmap-option');
+    if (option && !option.classList.contains('active')) setActiveColorMapOption(option, false);
+});
+colorMapList.addEventListener('keydown', (event) => {
+    const visible = colorMapOptionEls.filter(el => !el.hidden);
+    const index = visible.findIndex(el => el.classList.contains('active'));
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const next = index + (event.key === 'ArrowDown' ? 1 : -1);
+        setActiveColorMapOption(visible[Math.min(visible.length - 1, Math.max(0, next))]);
+    } else if (event.key === 'Enter') {
+        event.preventDefault();
+        if (visible[index]) chooseColorMap(visible[index].dataset.value);
+    } else if (event.key === 'Escape') {
+        event.stopPropagation();
+        closeColorMapList(true);
+    } else if (event.key === 'Tab') {
+        closeColorMapList();
+    }
+});
+// Scrolling over the button steps through the maps (down = next)
+attachWheelStep(colorMapButton, (steps) => {
+    const index = COLOR_MAP_NAMES.indexOf(colorMap.get());
+    const next = Math.min(COLOR_MAP_NAMES.length - 1, Math.max(0, (index < 0 ? 0 : index) - steps));
+    if (next !== index) colorMap.set(COLOR_MAP_NAMES[next]);
+});
+
+colorMap.subscribe((value) => {
+    document.getElementById('colorMapName').textContent = value;
+    for (const el of colorMapOptionEls) el.setAttribute('aria-selected', String(el.dataset.value === value));
     scheduleRepaint();
 });
 
 // CONTROL PANEL / Reverse color
 reverseColor.subscribe((show) => {
-    const slider = document.getElementById('reverseColorSlider');
-    const toggleEl = document.getElementById('reverseColorButton');
-
-    slider.classList.remove('translate-x-1', 'translate-x-7');
-    slider.classList.add(show ? 'translate-x-7' : 'translate-x-1');
-
-    toggleEl.classList.remove('bg-gray-500', 'bg-gray-800', 'bg-blue-600', 'bg-gray-200');
-    toggleEl.classList.add(show ? 'bg-gray-800' : 'bg-gray-500');
-
-    toggleEl.setAttribute('aria-checked', show);
+    setSwitch('reverseColorButton', show);
 });
 
 document.getElementById('reverseColorButton').addEventListener('click', () => {
@@ -1543,16 +1620,7 @@ document.getElementById('reverseColorButton').addEventListener('click', () => {
 
 // CONTROL PANEL / Invert color
 invertColor.subscribe((show) => {
-    const slider = document.getElementById('invertColorSlider');
-    const toggleEl = document.getElementById('invertColorButton');
-
-    slider.classList.remove('translate-x-1', 'translate-x-7');
-    slider.classList.add(show ? 'translate-x-7' : 'translate-x-1');
-
-    toggleEl.classList.remove('bg-gray-500', 'bg-gray-800', 'bg-blue-600', 'bg-gray-200');
-    toggleEl.classList.add(show ? 'bg-gray-800' : 'bg-gray-500');
-
-    toggleEl.setAttribute('aria-checked', show);
+    setSwitch('invertColorButton', show);
 });
 
 document.getElementById('invertColorButton').addEventListener('click', () => {
@@ -1560,15 +1628,13 @@ document.getElementById('invertColorButton').addEventListener('click', () => {
     scheduleRepaint();
 });
 
-// CONTROL PANEL / Color Map Help
-showColorMapHelpModal.listen((visible) => { document.getElementById('colorMapHelpModal').classList.toggle('hidden', !visible); });
-document.getElementById('colorMapHelpButton').addEventListener('click', () => { showColorMapHelpModal.set(!showColorMapHelpModal.get()); });
-document.getElementById('colorMapHelpModalX').addEventListener('click', () => { showColorMapHelpModal.set(false); });
+// CONTROL PANEL / Color bar: preview of the current color settings, low values on the left
+const colorbarCanvas = document.getElementById('colorbar');
+const drawColorbar = debounceLatest(() => paintLUT(colorbarCanvas, colorSettingsLUT(colorMap.get())), 30);
+for (const store of [colorMap, reverseColor, invertColor, colorStart, colorCycles, hueShiftDegrees, saturationPercent, luminosityPercent]) {
+    store.subscribe(() => drawColorbar());
+}
 
-// CONTROL PANEL / Advanced Help
-showAdvancedHelpModal.listen((visible) => { document.getElementById('advancedHelpModal').classList.toggle('hidden', !visible); });
-document.getElementById('advancedHelpButton').addEventListener('click', () => { showAdvancedHelpModal.set(!showAdvancedHelpModal.get()); });
-document.getElementById('advancedHelpModalX').addEventListener('click', () => { showAdvancedHelpModal.set(false); });
 
 // Zoom In
 document.getElementById('zoomInButton').addEventListener('click', () => {
@@ -1807,27 +1873,6 @@ const grid = document.getElementById('fnGrid');
 const filter = document.getElementById('mathFilter');
 const closeBtn = document.getElementById('closePopover');
 
-// Style function buttons
-function styleFnButtons() {
-    grid.querySelectorAll('.fn').forEach(b => {
-    Object.assign(b.style, {
-        padding: '8px 10px',
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        background: '#fafafa',
-        cursor: 'pointer',
-        fontSize: '13px',
-        textAlign: 'center'
-    });
-    b.addEventListener('keydown', (e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
-        e.preventDefault();
-        b.click();
-        }
-    });
-    });
-}
-styleFnButtons();
 
   /** Utility: position popover near button */
 function positionPopover() {
@@ -1835,8 +1880,8 @@ const rect = btn.getBoundingClientRect();
 const popWidth = pop.offsetWidth;
 const popHeight = pop.offsetHeight;
 
-// Try to align bottom-right of button with popover top-left
-let left = rect.right - popWidth;
+// Open below the button, left-aligned with it
+let left = rect.left;
 let top = rect.bottom + 6; // 6px gap
 
 // Ensure it doesn't overflow viewport
@@ -1889,6 +1934,9 @@ const q = filter.value.trim().toLowerCase();
 grid.querySelectorAll('.fn').forEach(b => {
 const t = (b.textContent + ' ' + (b.title || '')).toLowerCase();
 b.style.display = t.includes(q) ? '' : 'none';
+});
+grid.querySelectorAll('.fn-group').forEach(g => {
+g.style.display = [...g.querySelectorAll('.fn')].some(b => b.style.display !== 'none') ? '' : 'none';
 });
 });
 
@@ -2101,6 +2149,90 @@ const syncUrl = debounceLatest(() => {
         // Some browsers refuse to change the URL of a file:// page
     }
 }, 300);
+
+// Undo/redo of the graph settings: Ctrl/⌘+Z, Ctrl/⌘+Shift+Z or Ctrl+Y. The view
+// (pan and zoom) is not part of the history, so undoing an edit keeps the view.
+const HISTORY_VIEW_KEYS = ['xCenter', 'yCenter', 'zoom'];
+const HISTORY_LIMIT = 200;
+const undoStack = [];
+const redoStack = [];
+let historyCurrent = null;
+
+function historySnapshot() {
+    const config = getAppConfig();
+    for (const key of HISTORY_VIEW_KEYS) delete config[key];
+    if (config.equation != null) config.equation = equation.get();  // keep the spacing
+    return {
+        config,
+        key: JSON.stringify(config),
+        trusted: getStrippedEquation() !== untrustedEquation,
+    };
+}
+
+function recordHistoryNow() {
+    const snap = historySnapshot();
+    if (historyCurrent && snap.key === historyCurrent.key) return;
+    if (historyCurrent) {
+        undoStack.push(historyCurrent);
+        if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+        redoStack.length = 0;
+    }
+    historyCurrent = snap;
+    updateHistoryButtons();
+}
+
+const undoButton = document.getElementById('undoButton');
+const redoButton = document.getElementById('redoButton');
+function updateHistoryButtons() {
+    undoButton.disabled = undoStack.length === 0;
+    redoButton.disabled = redoStack.length === 0;
+}
+undoButton.addEventListener('click', () => undo());
+redoButton.addEventListener('click', () => redo());
+// Groups a burst of edits (typing, dragging a slider) into one undo step
+const recordHistory = debounceLatest(recordHistoryNow, 400);
+
+function applyHistory(snap) {
+    const { config } = snap;
+    if (config.equation != null) unmodifiedCymaticsEquation.set(false);
+    setConfigFromObj(config);
+    // setConfigFromObj skips empty values, but here empty means "off"
+    for (const [key, store] of Object.entries(CONFIG_STORES)) {
+        if (key in config && config[key] == null && key !== 'fuzzyFunction') store.set(config[key]);
+    }
+    // Equations the user typed in this session may run as JS again
+    if (snap.trusted) untrustedEquation = null;
+    historyCurrent = historySnapshot();
+    updateHistoryButtons();
+    scheduleRepaint();
+}
+
+function undo() {
+    recordHistoryNow();
+    if (!undoStack.length) return;
+    redoStack.push(historyCurrent);
+    applyHistory(undoStack.pop());
+}
+
+function redo() {
+    recordHistoryNow();
+    if (!redoStack.length) return;
+    undoStack.push(historyCurrent);
+    applyHistory(redoStack.pop());
+}
+
+document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    const key = e.key.toLowerCase();
+    const isUndo = key === 'z' && !e.shiftKey;
+    const isRedo = (key === 'z' && e.shiftKey) || (key === 'y' && !e.shiftKey && !e.metaKey);
+    if (!isUndo && !isRedo) return;
+    // Fields in dialogs (save size, equation editor draft, ...) keep their native undo
+    const field = e.target.closest?.('input, textarea, select, [contenteditable]');
+    if (field && !controlPanel.contains(field)) return;
+    e.preventDefault();
+    if (isUndo) undo(); else redo();
+});
 
 setParamsFromUrl();
 

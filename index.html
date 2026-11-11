@@ -4,649 +4,238 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fuzzy Graph</title>
-    <link rel="icon" href="/favicon.png">
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAGjklEQVR4AexUa0zTVxTvC6T0AaV0NQW0QyGI4FI25TVEN7PNADJQA4pCxTknMgQVFh+gRlB5U6hmVjcdjds0LlsVJNXgRAR5BBDIxgAZZQIZFvqCPii03bkSkFbQfTH7MG/O+d97//ece37n3HMODvMfjzcA3kTgfxEBLBQachTNsDQndGD+Z+4dUkayeDgmAKMZ7dF/2M5LOAyLRaTRaBQmk2kLUkgPpueELnm+e3GFDBCQMoXFcqDT6QvhMpajoyOTQnGiof+gYgU81z04kCM56HRvCwQXdxCJRDfQJVvKzqUIMs8IndkQ6XSmVjvpFf7Buk/z8vMP8vn8Q0eOpCf6+Xmv12gm3rGzs1sEbIdhs21AC3mIQONgbaPT6VyKioo+37QpsrCysjITh8P9awBwAcOWTCazt2/cHNHS0nBRKPxOwI2LS966desXyclJh8TiW6Xt7c2X8gsK9pPt7ALJKtUSBgwazZWKMFEoFGdf34D3IyM37QAwJqHwyl08Hj+J1sAzBIZm1tMLLIbJJJLJWnZW1mkun1+S7+rq6gWHyDOYpggLY/Hixe474+MTfm9vF35/+fIJDw+PMINBHmA0jgYGBQeHl5ZeOkoiESmtra21BQV51SaTSQ3aRuAZmguAtZ1Ox9y3L2XD3r17UqysCNYDAwODD+vq6tvb29s0Gg26ZOYCtKBSqfZhYWEbq6qqvn78uFvY3d3x7U2R6AyLxXIZkkqfcLk784xGY59UKtWCvAl4hiwB4OAykosL2zM19cB+CJmVSCS6sWyZV8InH4ckBwau2ePm5rGtuJjPk0gkXeDRzEVoAUHBMRiQNEwmA94bB8B7YrZsSevs7G0aGxtTgIwB2IwsAeBBkcI/VxIFiUXv6Oh8FBMXV2w0TtSRyTZttrZWrWNjyvsZGUeLV/j4fJaUlJRaW/uwUqVSyWffCsZUYrH4qr9/UEJtbW21ViuTwjl6f5jMyRIABgAY3nJ0JOj1elV6ekaOUa//Q61WywcHB3VDQ0M6MKZSKpUDC/D4Rz/ACA0NSYFc2Lh27bptuxMSEqOjo+PZ7KURmzfHHFcohpsgkZWQm9A72NZg+kV78HM2GWQyvMLf3/+Ir69v8K1bN+9rtVq5s7MzHmoYWgEL1b6Dk5MT2WAw4AgEgsLa2vpPAN3U/LizokwkulpRUyPCYg2No3SKZHTBAv34+PhCLpe7hkIZWYRhMGzBmBkIsw0cQoZKNcjD4eHhTsgHBYlEosjV6qVUGi0wKioqZueuXTuCgoIi4b1XQZSWTE5O2oMeRtXfPwZRUsCsBF01RiLBUPV6ZkbG8eicnJwb9fX1JxxNJgrImtk028AhIgCBmejv78cqoRo4nPdW3y4ry+vq6LheUFBQlHXy5BmIvOCv/v6fKsRiXkzM9hhIRtSQnAEwlclk2qAOaGNvz3R2XuTD5cZ9icFgsNXVNZ2YqfHSKkAiqN4XwGVOu+PjIyoqys4HBAR8BKEmosNpJhGJFN+VK9fweIXZzc3N3xw7diLRyooYpNHrObrJSY4TnbH22rUfj9LpDm/19fX9dvBg2h3QHQNGDsI0RbipyexLIBIdHMPDwz88nXXqOCQRDfJA29sr6YMkfAremnmANNlstltKyr6U3t7u0roHD87XVN0/29LSVLJ8+XJvqAhFUlJKrsEw3gtP8+o+YG9vT6I6EN1zc3O/IhJtyA0NDfWe3t57OJx3d7m7e8auDw1NKC8v/1mpVKG6RvZnGNov1RPGihXeXrCG7qwaSU4+kH676m41NDAZCL6yD+BgUM6fPRsJb8mGpOrdEBFxSimT/YrHY+rxeFNdc2PjL7Gxseng3PYLFy7we3p6OqDLmYUV7Vvb2moginuvXL9arlMqB8H4OPAL0bN8AiyEGMvhcDxgNmRnZ+crNZpWuVw+JJPJRmFWQTuVyqjUHmhINampqYU+Pqvi/fwCt5zMykoXCAT5hTxeZkhIyLbg1auTGhsb773MOADCWAIwQHkp4O0S09LSwgWlpeU6heIpCOqBEXrEBigxuBeKVal8gjpkV1fHnRIe7+Lhw4cLT2VmnoPuJ4byRQ1sGPTm9Bz+PyNLAEbwVA15IBEKhffAOAqdDiSRYZjMCIV9Ap5Ji6BIYYyMjPwNifZUpVIp0H+QNgC/lCwBIGED9ADUdjWwmfYclvMSAofAIGPTjPbo/7xK0wdzAUBnSBkxWr9Wng/AazU6+/I3AF57BGaHe671PwAAAP//fdzs7gAAAAZJREFUAwC8RdJf300+nwAAAABJRU5ErkJggg==">
     <link rel="stylesheet" href="/src/style.css">
 </head>
 
-<body class="min-h-screen">
-    <!-- Header -->
-    <header class="bg-gray-800 text-white h-16 fixed w-full top-0 left-0 z-50">
-        <div class="flex items-center justify-between h-full">
-            <div class="flex items-center">
+<body class="bg-zinc-100 text-zinc-800 antialiased">
+    <div class="fixed inset-0 flex flex-col md:flex-row">
 
-                <!-- Logo -->
-                <div class="h-fit flex">
-                    <div class="ml-2">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             width="70mm" height="15mm" viewBox="0 0 70 15"
-                             preserveAspectRatio="xMidYMid meet" class="w-full h-full">
+        <!-- Control panel: left column on desktop, bottom sheet on mobile -->
+        <aside id="controlPanel" style="--panel-w: 22rem"
+            class="dark order-2 md:order-1 relative z-20 flex flex-col shrink-0 w-full md:w-(--panel-w) max-h-[45dvh] md:max-h-none
+                   bg-white text-zinc-800 dark:bg-zinc-900 dark:text-zinc-200
+                   border-t md:border-t-0 md:border-r border-zinc-200 dark:border-zinc-800 shadow-xl md:shadow-none">
 
-                            <defs>
-                                <filter id="fg-blur" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur in="SourceGraphic" stdDeviation="1.0"/>
-                                </filter>
-                            </defs>
+            <!-- Brand + actions -->
+            <div class="flex items-center gap-1 px-3 h-12 shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-900 dark:bg-zinc-950 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 54 13" class="h-6 w-auto min-w-0 shrink mr-auto" aria-label="FuzzyGraph">
+                    <defs>
+                        <filter id="fg-blur" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="0.9"/>
+                        </filter>
+                    </defs>
+                    <g font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="9" fill="white" stroke="white" stroke-width="0.26">
+                        <text x="1" y="10" filter="url(#fg-blur)"><tspan>Fuzzy</tspan><tspan dx="0.8">Graph</tspan></text>
+                        <text x="1" y="10"><tspan>Fuzzy</tspan><tspan dx="0.8">Graph</tspan></text>
+                    </g>
+                </svg>
 
-                            <text x="2" y="10" font-family="Arial Black" font-size="9"
-                                    stroke="white" fill="white" stroke-width="0.26"
-                                    filter="url(#fg-blur)" opacity="1">
-                                <tspan>Fuzzy</tspan>
-                                <tspan dx="0.8">Graph</tspan>
-                            </text>
+                <button id="undoButton" class="icon-btn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>
+                    <svg viewBox="0 0 24 24"><path d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"/></svg>
+                </button>
+                <button id="redoButton" class="icon-btn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>
+                    <svg viewBox="0 0 24 24"><path d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3"/></svg>
+                </button>
+                <span class="w-px h-5 mx-1 bg-white/15"></span>
+                <button id="showShareButton" class="icon-btn" title="Share link to this graph" aria-label="Share">
+                    <svg viewBox="0 0 24 24"><path d="M7.2 10.9a2.25 2.25 0 1 0 0 2.2m0-2.2a2.2 2.2 0 0 1 0 2.2m0-2.2 9.6-5.3m-9.6 7.5 9.6 5.3m0 0a2.25 2.25 0 1 0 3.9 2.2 2.25 2.25 0 0 0-3.9-2.2Zm0-12.8a2.25 2.25 0 1 0 3.9-2.2 2.25 2.25 0 0 0-3.9 2.2Z"/></svg>
+                </button>
+                <button id="showSaveButton" class="icon-btn" title="Save as PNG (graph settings embedded)" aria-label="Save image">
+                    <svg viewBox="0 0 24 24"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                </button>
+                <button id="showOpenButton" class="icon-btn" title="Open a FuzzyGraph PNG" aria-label="Open image">
+                    <svg viewBox="0 0 24 24"><path d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"/></svg>
+                </button>
+                <button id="showHelpButton" class="icon-btn" title="About FuzzyGraph" aria-label="Help">
+                    <svg viewBox="0 0 24 24"><path d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>
+                </button>
+                <button id="hideControlPanelButton" class="icon-btn" title="Hide panel" aria-label="Hide panel">
+                    <svg viewBox="0 0 24 24" class="-rotate-90 md:rotate-0"><path d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5"/></svg>
+                </button>
+            </div>
 
-                            <text x="2" y="10" font-family="Arial Black" font-size="9"
-                                    stroke="white" fill="white" stroke-width="0.26">
-                                <tspan>Fuzzy</tspan>
-                                <tspan dx="0.8">Graph</tspan>
-                            </text>
-                        </svg>
-                    </div>
+            <!-- Panel content -->
+            <div id="panelScroll" class="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 pb-4">
 
-                    <div>
-                        <button id="downloadFuzzyGraphBtn" data-tooltip="Download offline copy of FuzzyGraph"
-                        class="hidden md:flex text-white hover:bg-gray-700 items-center py-3 rounded tooltip-button h-14">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                            </svg>
+                <!-- Equation -->
+                <section class="panel-section">
+                    <h3 class="section-title">
+                        Equation
+                        <button id="equationHelpButton" class="help-btn" aria-label="Equation help">?</button>
+                    </h3>
+                    <textarea id="equationInput" rows="1" class="field code-field"
+                        oninput="this.value=this.value.toLowerCase()" autocapitalize="off" spellcheck="false"
+                        placeholder="y = x" aria-describedby="equationError"></textarea>
+                    <p id="equationError" class="hidden mt-1 text-xs text-red-600 dark:text-red-400" role="status"></p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button id="mathBtn" type="button" class="chip" aria-haspopup="true" aria-expanded="false"
+                            aria-controls="mathPopover" title="Insert functions and generators (Ctrl/⌘+K)">
+                            <span class="font-serif italic">ƒ</span> Functions
+                        </button>
+                        <button id="openEquationModalButton" type="button" class="chip" title="Edit in a large editor">
+                            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5"><path d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
+                            Editor
                         </button>
                     </div>
+                    <p class="hint">Drag or scroll over a number to change it (Shift: finer, Ctrl: coarser). Ctrl+Z undoes.</p>
+                </section>
+
+                <!-- Fuzzy function: maps the error v at each point to a color position -->
+                <section class="panel-section">
+                    <h3 class="section-title">
+                        Fuzzy function
+                        <button id="controlsHelpButton" class="help-btn" aria-label="Fuzzy function help">?</button>
+                    </h3>
+                    <select id="fuzzyFunctionSelect" class="field" aria-label="Fuzzy function preset"></select>
+                    <textarea id="fuzzyFunctionInput" rows="1" maxlength="500"
+                        autocapitalize="off" autocomplete="off" spellcheck="false"
+                        aria-label="Fuzzy function g(v, f)" aria-describedby="fuzzyFunctionError"
+                        class="field code-field mt-2" placeholder="(v + 0.000001)^f"></textarea>
+                    <p id="fuzzyFunctionError" class="hidden mt-1 text-xs text-red-600 dark:text-red-400"></p>
+                    <p class="hint"><code>v</code> error at a point (0 = exactly true), <code>f</code> parameter below</p>
+
+                    <label for="fuzzyInput" class="field-label flex justify-between mt-3">
+                        <span>Parameter <span class="font-mono">f</span></span>
+                        <span id="fuzzyLevelDisplay" class="tabular-nums font-mono text-zinc-900 dark:text-zinc-100"></span>
+                    </label>
+                    <input id="fuzzyInput" type="range" min="0" max="100" class="range">
+                </section>
+
+                <!-- Colors -->
+                <section class="panel-section">
+                    <h3 class="section-title">
+                        Colors
+                        <button id="colorMapHelpButton" class="help-btn" aria-label="Color help">?</button>
+                    </h3>
+                    <button id="colorMapButton" type="button" class="field flex items-center gap-2 cursor-pointer"
+                        aria-haspopup="listbox" aria-expanded="false" aria-controls="colorMapList"
+                        title="Color map (scroll to step through)">
+                        <span id="colorMapName" class="w-24 shrink-0 truncate text-left"></span>
+                        <canvas id="colorbar" width="256" height="1" class="min-w-0 flex-1 h-4 rounded-sm ring-1 ring-black/10 dark:ring-white/10"></canvas>
+                        <svg viewBox="0 0 24 24" class="w-4 h-4 shrink-0 text-zinc-400"><path d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="mt-3 grid grid-cols-2 gap-x-4">
+                        <div class="switch-row">
+                            <span>Reverse</span>
+                            <button id="reverseColorButton" type="button" role="switch" aria-checked="false" class="switch" aria-label="Reverse colors"></button>
+                        </div>
+                        <div class="switch-row">
+                            <span>Invert</span>
+                            <button id="invertColorButton" type="button" role="switch" aria-checked="false" class="switch" aria-label="Invert colors"></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- View -->
+                <section class="panel-section">
+                    <h3 class="section-title">View</h3>
+                    <div class="grid grid-cols-2 gap-x-4 items-end">
+                        <div>
+                            <label for="rotationDegreesInput" class="field-label">Rotation °</label>
+                            <input type="number" inputmode="decimal" step="any" id="rotationDegreesInput"
+                                name="rotationDegreesInput" class="field no-spinner">
+                        </div>
+                        <div class="switch-row h-[34px]">
+                            <span>Axes</span>
+                            <button id="axesToggle" type="button" role="switch" aria-checked="true" class="switch" aria-label="Show axes"></button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Advanced (open state = advanced mode) -->
+                <details id="advancedSection" class="panel-section group">
+                    <summary class="section-title cursor-pointer select-none list-none">
+                        <svg viewBox="0 0 24 24" class="w-3 h-3 -ml-0.5 transition-transform group-open:rotate-90"><path d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+                        Advanced
+                        <button id="advancedHelpButton" class="help-btn" aria-label="Advanced help">?</button>
+                    </summary>
+
+                    <p class="field-label mt-1">Value range <span class="text-zinc-400 dark:text-zinc-500">(empty = auto)</span></p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="relative">
+                            <input type="text" inputmode="decimal" id="minOverrideInput" name="minOverrideInput"
+                                class="field no-spinner pr-7" aria-label="Minimum override" placeholder="min">
+                            <button type="button" id="minOverrideToggle" class="clear-btn hidden" tabindex="-1" title="Back to auto">&times;</button>
+                        </div>
+                        <div class="relative">
+                            <input type="text" inputmode="decimal" id="maxOverrideInput" name="maxOverrideInput"
+                                class="field no-spinner pr-7" aria-label="Maximum override" placeholder="max">
+                            <button type="button" id="maxOverrideToggle" class="clear-btn hidden" tabindex="-1" title="Back to auto">&times;</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="colorStartInput" class="field-label">Color start</label>
+                            <input type="number" id="colorStartInput" name="colorStartInput" class="field no-spinner">
+                        </div>
+                        <div>
+                            <label for="colorCyclesInput" class="field-label">Color cycles</label>
+                            <input type="number" id="colorCyclesInput" name="colorCyclesInput" class="field no-spinner">
+                        </div>
+                    </div>
+
+                    <div class="mt-3 grid grid-cols-3 gap-2">
+                        <div>
+                            <label for="hueShiftInput" class="field-label">Hue °</label>
+                            <input type="number" id="hueShiftInput" name="hueShiftInput" min="-180" max="180" step="1" class="field no-spinner">
+                        </div>
+                        <div>
+                            <label for="saturationAdjustInput" class="field-label">Saturation %</label>
+                            <input type="number" id="saturationAdjustInput" name="saturationAdjustInput" min="-100" max="100" step="1" class="field no-spinner">
+                        </div>
+                        <div>
+                            <label for="luminosityAdjustInput" class="field-label">Lightness %</label>
+                            <input type="number" id="luminosityAdjustInput" name="luminosityAdjustInput" min="-100" max="100" step="1" class="field no-spinner">
+                        </div>
+                    </div>
+                </details>
+
+                <div class="mt-6 flex items-center justify-between gap-2 text-xs text-zinc-400 dark:text-zinc-500">
+                    <span>≈ Built by <a href="https://github.com/calebmadrigal/fuzzygraph" class="link">Caleb Madrigal</a> ≈</span>
+                    <button id="themeToggle" type="button" class="chip" title="Switch panel between dark and light">Light panel</button>
                 </div>
-
             </div>
-            <div class="flex items-center space-x-4">
-                <!-- Desktop Navigation -->
-                <nav class="hidden md:!flex space-x-4">
 
-                    <button id="showShareButton" data-tooltip="Generates a shareable link to this graph"
-                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
-                        <span class="inline text-gray-200 hover:text-gray-300">Share</span>
-                        <svg class="w-5 h-5" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 71.335 351.263 C 71.335 351.263 220.824 546.123 425.655 354.919" id="object-0"/>
-                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 244.441 337.303 L 247.495 57.542" id="object-1"/>
-                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 245.927 57.667 C 245.927 57.667 233.676 153.919 163.023 157.325" id="object-2"/>
-                            <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 50%; stroke-width: 40px;" d="M 324.455 177.087 C 324.455 177.087 314.941 85.607 244.288 82.201" transform="matrix(-1, 0, 0, -1, 4.432068, -20.892017)" id="object-3"/>
-                        </svg>
-                    </button>
+            <!-- Drag to resize (desktop) -->
+            <div id="panelResizer" class="hidden md:block absolute top-0 -right-1 w-2 h-full cursor-col-resize z-30
+                        hover:bg-indigo-500/30 active:bg-indigo-500/40 transition-colors" title="Drag to resize"></div>
+        </aside>
 
-                    <button id="showSaveButton" data-tooltip="Saves this graph as an image file with the graph data built in"
-                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
-                        <span class="inline text-gray-200">Save</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                        </svg>
-                    </button>
+        <!-- Graph -->
+        <main id="overCanvasControls" class="order-1 md:order-2 relative flex-1 min-h-0 min-w-0">
+            <canvas id="mainCanvas" class="absolute inset-0 w-full h-full bg-white"></canvas>
 
-                    <button id="showOpenButton" data-tooltip="Only opens FuzzyGraph-created image files"
-                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700 tooltip-button">
-                        <span class="inline text-gray-200">Open</span>
-                        <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18Z" fill="#000000"/>
-                        </svg>
-                    </button>
-
-                    <button id="showHelpButton"
-                        class="text-white hover:text-blue-200 flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-700">
-                        <span class="inline text-gray-200">Help</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                        </svg>
-                    </button>
-
-                </nav>
-
-                <!-- Mobile menu button -->
-                <button id="mobileMenuButton" class="md:hidden p-2 mr-2">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-
-        <!-- Mobile Navigation Menu -->
-        <div id="mobileMenu" x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 transform -translate-y-2"
-            x-transition:enter-end="opacity-100 transform translate-y-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 transform translate-y-0"
-            x-transition:leave-end="opacity-0 transform -translate-y-2"
-            class="hidden absolute top-16 right-0 w-32 bg-gray-800 shadow-lg md:hidden rounded-bl-lg">
-            <div class="px-2 py-3 space-y-2">
-
-                <button id="mobileShowShareButton"
-                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
-                    <span class="inline text-gray-200 w-12">Share</span>
-                    <svg class="w-5 h-5 block" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 71.335 351.263 C 71.335 351.263 220.824 546.123 425.655 354.919" id="object-0"/>
-                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 244.441 337.303 L 247.495 57.542" id="object-1"/>
-                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; stroke-width: 40px;" d="M 245.927 57.667 C 245.927 57.667 233.676 153.919 163.023 157.325" id="object-2"/>
-                        <path style="fill: none; stroke: rgb(255, 255, 255); stroke-linecap: round; transform-box: fill-box; transform-origin: 50% 50%; stroke-width: 40px;" d="M 324.455 177.087 C 324.455 177.087 314.941 85.607 244.288 82.201" transform="matrix(-1, 0, 0, -1, 4.432068, -20.892017)" id="object-3"/>
-                    </svg>
-                </button>
-
-                <button id="mobileShowSaveButton"
-                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
-                    <span class="inline text-gray-200 w-12">Save</span>
-                    <svg class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                </button>
-
-                <button id="mobileShowOpenButton"
-                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
-                    <span class="inline text-gray-200 w-12">Open</span>
-                    <svg class="w-5 h-5 block" width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18Z" fill="#000000"/>
-                    </svg>
-                </button>
-
-                <button id="mobileShowHelpButton"
-                    class="w-full text-white hover:bg-gray-700 flex items-center space-x-2 px-3 py-2 rounded">
-                    <span class="inline text-gray-200 w-12">Help</span>
-                    <svg class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                    </svg>
-                </button>
-
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Container -->
-    <!-- <div class="flex flex-col md:flex-row pt-16 bg-gray-300"> -->
-    <div class="fixed inset-x-0 top-16 bottom-0 flex flex-col md:flex-row bg-gray-300">
-        <!-- Main Content -->
-        <main id="overCanvasControls" class="flex-1 order-1 md:order-2 transition-all duration-300 relative">
-            <div class="absolute top-4 right-4 z-10 flex flex-col gap-0.5">
-                <button id="zoomInButton"
-                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-t-lg shadow-lg transition-colors duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                </button>
-                <button id="zoomOutButton"
-                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-b-lg shadow-lg transition-colors duration-200">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" />
-                    </svg>
-                </button>
-
-                <button id="gotoButton"
-                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center mt-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9" stroke-width="2" />
-                        <circle cx="12" cy="12" r="4" stroke-width="2" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v2m0 14v2m9-9h-2M5 12H3" />
-                    </svg>
-                </button>
-
-                <button id="homeButton"
-                    class="p-1.5 bg-gray-800 bg-opacity-75 hover:bg-opacity-100 text-white rounded-lg shadow-lg transition-colors duration-200 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 9.5l9-7 9 7M4 10v10a1 1 0 001 1h5V14h4v7h5a1 1 0 001-1V10" />
-                    </svg>
-                </button>
-
-            </div>
-            <!-- Sidebar Show Button (Desktop) -->
-            <button id="openControlPanelButton"
-                class="hidden md:!flex items-center justify-center w-6 h-12 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white rounded-r fixed left-0 top-1/2 transform -translate-y-1/2 transition-opacity duration-300">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
+            <button id="openControlPanelButton" class="hidden map-btn absolute top-3 left-3 z-10" title="Show panel" aria-label="Show panel">
+                <svg viewBox="0 0 24 24"><path d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"/></svg>
             </button>
 
-            <canvas id="mainCanvas" class="w-full h-[calc(100dvh-4rem)] md:h-[calc(100dvh-4rem)] bg-white">
-            </canvas>
+            <div class="absolute top-3 right-3 z-10 flex flex-col gap-2">
+                <div class="map-group">
+                    <button id="zoomInButton" class="map-btn" title="Zoom in" aria-label="Zoom in">
+                        <svg viewBox="0 0 24 24"><path d="M12 5v14m7-7H5"/></svg>
+                    </button>
+                    <button id="zoomOutButton" class="map-btn" title="Zoom out" aria-label="Zoom out">
+                        <svg viewBox="0 0 24 24"><path d="M19 12H5"/></svg>
+                    </button>
+                </div>
+                <div class="map-group">
+                    <button id="gotoButton" class="map-btn" title="Go to coordinates" aria-label="Go to coordinates">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3m10-10h-3M5 12H2"/></svg>
+                    </button>
+                    <button id="homeButton" class="map-btn" title="Reset view" aria-label="Reset view">
+                        <svg viewBox="0 0 24 24"><path d="M3 9.5l9-7 9 7M4.5 8.5V20a1 1 0 0 0 1 1H10v-6h4v6h4.5a1 1 0 0 0 1-1V8.5"/></svg>
+                    </button>
+                </div>
+            </div>
 
             <div id="hoverMsgDiv" class="coords">
                 <span id="hoverMsg">Loading...</span>
             </div>
         </main>
-
-        <!-- Side Control Panel - Fixed to bottom on mobile, left side on desktop -->
-        <aside id="controlPanel"
-            class="bg-gray-300 text-gray-800 w-full md:w-64 fixed order-2 md:order-1 z-40 bottom-0 md:bottom-auto md:top-16 md:left-0">
-            <!-- Top Control Bar -->
-            <div class="bg-gray-400 text-white p-2 flex justify-between items-center">
-                <button id="hideControlPanelButton" class="p-1 hover:bg-gray-700 rounded">
-                    <svg class="w-5 h-5 rotate-90 md:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19l7-7-7-7" />
-                    </svg>
-                </button>
-
-                <div id="advancedModeToggle" class="flex items-center gap-3 select-none mr-2">
-                    <!-- Dynamic Label -->
-                    <span id="modeLabel" class="text-xs">Basic</span>
-                  
-                    <!-- Switch -->
-                    <button
-                      id="modeToggle"
-                      type="button"
-                      role="switch"
-                      aria-checked="false"
-                      aria-labelledby="mode-label"
-                      class="relative inline-flex h-6 w-12 items-center bg-gray-300 transition-colors duration-200 
-                             focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
-                    >
-                      <span class="sr-only">Toggle Basic/Advanced</span>
-                  
-                      <!-- Track border -->
-                      <span aria-hidden="true" class="absolute inset-0 border border-gray-500/50 pointer-events-none rounded-none"></span>
-                  
-                      <!-- Thumb -->
-                      <span
-                        id="modeThumb"
-                        class="pointer-events-none inline-block h-4 w-4 translate-x-1 bg-gray-50 transition-all duration-200 
-                               will-change-transform rounded-none shadow-md"
-                      ></span>
-                    </button>
-                </div>
-
-            </div>
-            <!-- Sidebar Content -->
-            <div class="p-4 flex flex-col space-y-8 max-h-[30vh] md:max-h-[calc(100vh-7rem)] overflow-y-auto">
-                <!-- Equation Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
-                      <span>Equation</span>
-                      <button id="equationHelpButton"
-                        class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8.228 9c.549-1.165 2.03-2 3.772-2 
-                               2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
-                               -.542.104-.994.54-.994 1.093m0 3h.01
-                               M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                        </svg>
-                      </button>
-                    </h3>
-
-                    <div style="position:relative; max-width:100%;">
-                        <textarea id="equationInput" class="w-full h-[74px] p-2 border border-gray-300 rounded-md resize-y"
-                            oninput="this.value=this.value.toLowerCase()" autocapitalize="off" spellcheck="false"
-                            placeholder="y=x">
-                        </textarea>
-
-                        <button id="openEquationModalButton" type="button" title="Open equation editor"
-                        class="m-1"
-                        style="position:absolute; right:6px; bottom:30px; height:20px; width:20px; border-radius:4px;
-                                border:0px; background:#fff; cursor:pointer; font-size:18px; line-height:1; padding:0;">
-                        ⤢
-                        </button>
-
-                        <button id="mathBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mathPopover"
-                        title="Math functions (⌘/Ctrl+K)"
-                        class="m-1"
-                        style="position:absolute; right:6px; bottom:6px; height:20px; width:20px; border-radius:4px;
-                                border:0px; background:#fff; cursor:pointer; font-size:18px; line-height:1; padding:0;">
-                        +
-                        </button>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Drag or scroll over any number to change it. Shift: finer, Ctrl: coarser.
-                    </p>
-
-                </div>
-
-                <!-- Controls Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
-                        <span>Controls</span>
-                        <button id="controlsHelpButton"
-                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 
-                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
-                                -.542.104-.994.54-.994 1.093m0 3h.01
-                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                            </svg>
-                      </button>
-                    </h3>
-                    <!-- Fuzzy Level Slider -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">
-                            Fuzzy Level: <span id="fuzzyLevelDisplay"></span>
-                        </label>
-                        <!-- <input id="fuzzyInput" type="range" min="0" max="100"
-                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"> -->
-
-                            <input
-                            id="fuzzyInput"
-                            type="range"
-                            min="0"
-                            max="100"
-                            class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
-                              [&::-webkit-slider-thumb]:appearance-none
-                              [&::-webkit-slider-thumb]:w-4
-                              [&::-webkit-slider-thumb]:h-4
-                              [&::-webkit-slider-thumb]:bg-gray-800
-                              [&::-webkit-slider-thumb]:rounded-none
-                              [&::-webkit-slider-thumb]:cursor-pointer
-                          
-                              [&::-moz-range-thumb]:w-4
-                              [&::-moz-range-thumb]:h-4
-                              [&::-moz-range-thumb]:bg-gray-800
-                              [&::-moz-range-thumb]:border-0
-                              [&::-moz-range-thumb]:rounded-none
-                            "
-                          />
-                        <label for="fuzzyFunctionSelect" class="block text-sm font-medium text-gray-700 pt-1">
-                            Fuzzy Function
-                        </label>
-                        <select id="fuzzyFunctionSelect"
-                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded-md bg-white"></select>
-                        <input id="fuzzyFunctionInput" type="text" maxlength="500"
-                            autocapitalize="off" autocomplete="off" spellcheck="false"
-                            aria-describedby="fuzzyFunctionError"
-                            class="w-full px-2 py-1 font-mono text-sm border border-gray-300 rounded-md"
-                            placeholder="(v + 0.000001)^f" />
-                        <p id="fuzzyFunctionError" class="hidden text-xs text-red-600"></p>
-                    </div>
-
-                    <!-- Axes Toggle Switch -->
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-sm font-medium text-gray-700">Show Axes</span>
-                        <button
-                            type="button"
-                            id="axesToggle"
-                            role="switch"
-                            aria-checked="true"
-                            class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
-                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
-                        >
-                            <span class="sr-only">Toggle axes</span>
-                            <span
-                                id="axesOnSlider"
-                                class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
-                                       will-change-transform rounded-none shadow-md"
-                            ></span>
-                        </button>
-                    </div>
-
-                </div>
-
-                <!-- Advanced Controls Section -->
-                <div id="advancedControlsSection" class="hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
-                        <span>Advanced Controls</span>
-                        <button id="advancedHelpButton"
-                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.228 9c.549-1.165 2.03-2 3.772-2
-                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
-                                -.542.104-.994.54-.994 1.093m0 3h.01
-                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                            </svg>
-                      </button>
-                    </h3>
-
-                    <div>
-                        <label for="minOverrideInput" class="block text-sm font-medium text-gray-600">
-                          Min Override (min: <span id="minDisplay" class="text-xs">0</span>)
-                        </label>
-
-                        <div class="mt-1 relative">
-                          <!-- Input -->
-                          <input
-                            type="text"
-                            inputmode="decimal"
-                            id="minOverrideInput"
-                            name="minOverrideInput"
-                            class="no-spinner w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm
-                                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          >
-
-                          <!-- Toggle inside input (small advanced-style) -->
-                          <button
-                            type="button"
-                            id="minOverrideToggle"
-                            class="absolute inset-y-0 right-2 my-auto h-5 w-9 flex items-center px-0
-                                   bg-gray-800 transition-colors duration-200 rounded-none"
-                            aria-pressed="false"
-                            tabindex="-1"
-                          >
-                            <span
-                              class="knob inline-block h-3 w-3 translate-x-5 bg-gray-50 shadow transform
-                                     transition-transform duration-200 will-change-transform rounded-none"
-                            ></span>
-                          </button>
-                        </div>
-                      </div>
-
-                    <!-- Max Override -->
-                    <div>
-                        <label for="maxOverrideInput" class="block text-sm font-medium text-gray-600 mt-2">
-                        Max Override (max: <span id="maxDisplay" class="text-xs">0</span>)
-                        </label>
-
-                        <div class="mt-1 relative">
-                        <input
-                            type="text"
-                            inputmode="decimal"
-                            id="maxOverrideInput"
-                            name="maxOverrideInput"
-                            class="no-spinner w-full px-3 py-2 pr-12 border border-gray-300 rounded-md shadow-sm
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-
-                        <!-- Toggle inside input (small advanced-style) -->
-                        <button
-                            type="button"
-                            id="maxOverrideToggle"
-                            class="absolute inset-y-0 right-2 my-auto h-5 w-9 flex items-center px-0
-                                bg-gray-800 transition-colors duration-200 rounded-none"
-                            aria-pressed="false"
-                            tabindex="-1"
-                        >
-                            <span
-                            class="knob inline-block h-3 w-3 translate-x-5 bg-gray-50 shadow transform
-                                    transition-transform duration-200 will-change-transform rounded-none"
-                            ></span>
-                        </button>
-                        </div>
-                    </div>
-
-                    <!-- Rotation (degrees) -->
-                    <div class="mt-2">
-                        <label for="rotationDegreesInput" class="block text-sm font-medium text-gray-600">
-                            Rotation (degrees)
-                        </label>
-                        <input
-                            type="number"
-                            inputmode="decimal"
-                            step="any"
-                            id="rotationDegreesInput"
-                            name="rotationDegreesInput"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                </div>
-
-                <!-- Color Section -->
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
-                        <span>Color Map</span>
-                        <button id="colorMapHelpButton"
-                            class="text-gray-500 hover:text-blue-500 flex items-center p-1 rounded-md hover:bg-gray-100">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 
-                                2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907
-                                -.542.104-.994.54-.994 1.093m0 3h.01
-                                M12 21a9 9 0 110-18 9 9 0 010 18z" />
-                            </svg>
-                      </button>
-                    </h3>
-
-                    <!-- Color Map Dropdown -->
-                    <div class="relative inline-block max-w-full sm:w-64 w-full">
-                        <select id="colorMapSelect" name="colors"
-                            class="block w-full min-w-0 truncate appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-10 text-base text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                        <!-- Dropdown arrow -->
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                            <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <!-- Reverse Color Switch -->
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-sm font-medium text-gray-700">Reverse Color</span>
-                        <button
-                            id="reverseColorButton"
-                            type="button"
-                            role="switch"
-                            aria-checked="false"
-                            class="relative inline-flex h-6 w-12 items-center bg-gray-500 transition-colors duration-200
-                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
-                        >
-                            <span class="sr-only">Toggle color reversal</span>
-                            <span
-                                id="reverseColorSlider"
-                                class="pointer-events-none inline-block h-4 w-4 translate-x-1 bg-gray-50 transition-all duration-200
-                                       will-change-transform rounded-none shadow-md"
-                            ></span>
-                        </button>
-                    </div>
-
-                    <!-- Invert Color Switch -->
-                    <div class="flex items-center justify-between mt-4">
-                        <span class="text-sm font-medium text-gray-700">Invert Color</span>
-                        <button
-                            id="invertColorButton"
-                            type="button"
-                            role="switch"
-                            aria-checked="true"
-                            class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
-                                   focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
-                        >
-                            <span class="sr-only">Toggle color inversion</span>
-                            <span
-                                id="invertColorSlider"
-                                class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
-                                       will-change-transform rounded-none shadow-md"
-                            ></span>
-                        </button>
-                    </div>
-
-                </div>
-
-                <!-- Advanced Color Section -->
-                <div id="advancedColorSection" class="hidden mt-8">
-                    <h3 class="text-lg font-semibold text-gray-900 pb-2 mb-4 border-b-2 border-gray-200 flex items-center gap-1">
-                        <span>Advanced Color</span>
-                    </h3>
-
-                    <!-- Color Start -->
-                    <div class="mt-2">
-                        <label for="colorStartInput" class="block text-sm font-medium text-gray-600">
-                            Color Start
-                        </label>
-                        <input
-                            type="number"
-                            id="colorStartInput"
-                            name="colorStartInput"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                    <!-- Color Cycles -->
-                    <div class="mt-2">
-                        <label for="colorCyclesInput" class="block text-sm font-medium text-gray-600">
-                            Color Cycles
-                        </label>
-                        <input
-                            type="number"
-                            id="colorCyclesInput"
-                            name="colorCyclesInput"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                    <!-- Hue Shift -->
-                    <div class="mt-2">
-                        <label for="hueShiftInput" class="block text-sm font-medium text-gray-600">
-                            Hue Shift (degrees)
-                        </label>
-                        <input
-                            type="number"
-                            id="hueShiftInput"
-                            name="hueShiftInput"
-                            min="-180"
-                            max="180"
-                            step="1"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                    <!-- Saturation Adjustment -->
-                    <div class="mt-2">
-                        <label for="saturationAdjustInput" class="block text-sm font-medium text-gray-600">
-                            Saturation (% change)
-                        </label>
-                        <input
-                            type="number"
-                            id="saturationAdjustInput"
-                            name="saturationAdjustInput"
-                            min="-100"
-                            max="100"
-                            step="1"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                    <!-- Luminosity Adjustment -->
-                    <div class="mt-2">
-                        <label for="luminosityAdjustInput" class="block text-sm font-medium text-gray-600">
-                            Luminosity (% change)
-                        </label>
-                        <input
-                            type="number"
-                            id="luminosityAdjustInput"
-                            name="luminosityAdjustInput"
-                            min="-100"
-                            max="100"
-                            step="1"
-                            class="no-spinner w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-                </div>
-
-                <div class="mt-16 text-center flex flex-col justify-end">
-                    <span>≈ Built by <a href="https://github.com/calebmadrigal/fuzzygraph"
-                            class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">
-                            Caleb Madrigal
-                        </a>
-                        ≈</span>
-                </div>
-
-            </div>
     </div>
-    </aside>
 
-    <!-- Mobile Show Button (when panel is hidden) -->
-    <button id="mobileShowControlPanelButton"
-        class="md:hidden fixed bottom-0 left-1/2 transform -translate-x-1/2 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white px-4 py-2 rounded-t transition-all duration-300">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
-        </svg>
-    </button>
-    </div>
 
     <!-- Share modal background -->
     <div id="shareModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -792,21 +381,7 @@
                         <!-- Show Axes -->
                         <div class="flex items-center justify-between">
                             <span class="text-sm font-medium text-gray-700">Show Axes</span>
-                            <button
-                                type="button"
-                                id="saveAxesToggle"
-                                role="switch"
-                                aria-checked="true"
-                                class="relative inline-flex h-6 w-12 items-center bg-gray-800 transition-colors duration-200 
-                                       focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-offset-2 rounded-none"
-                            >
-                                <span class="sr-only">Toggle axes in saved image</span>
-                                <span
-                                    id="saveAxesOnSlider"
-                                    class="pointer-events-none inline-block h-4 w-4 translate-x-7 bg-gray-50 transition-all duration-200 
-                                           will-change-transform rounded-none shadow-md"
-                                ></span>
-                            </button>
+                            <button type="button" id="saveAxesToggle" role="switch" aria-checked="true" class="switch" aria-label="Show axes in saved image"></button>
                         </div>
 
                         <!-- Save Image Button -->
@@ -950,223 +525,190 @@
         </div>
     </div>
 
-    <!-- Help modal background -->
-    <div id="helpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <!-- Help -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="relative bg-white rounded-lg shadow-lg max-w-lg w-full max-h-[85vh] flex flex-col">
+            <button id="helpModalX" aria-label="Close"
+                class="absolute top-3 right-3 text-zinc-500 hover:text-zinc-800 text-xl font-bold focus:outline-none">&times;</button>
+            <h2 class="text-xl font-semibold px-6 pt-5 pb-3">FuzzyGraph</h2>
+            <nav class="px-6 pb-3 flex flex-wrap gap-1.5 border-b border-zinc-200">
+                <a href="#help-equation" class="chip">Equation</a>
+                <a href="#help-fuzziness" class="chip">Fuzzy function</a>
+                <a href="#help-colors" class="chip">Colors</a>
+                <a href="#help-advanced" class="chip">Advanced</a>
+                <a href="#help-shortcuts" class="chip">Shortcuts</a>
+            </nav>
+            <div id="helpScroll" class="help-body overflow-y-auto px-6 py-4">
+                <section id="help-about">
+                    <p>A fuzzy (non-binary) graphing calculator. A normal graph draws only the points where both sides of the equation are <em>exactly</em> equal. FuzzyGraph colors every point by how close the two sides are, so you see the whole error landscape: graphs of approximate equations (≈).</p>
+                    <p>Free and <a href="https://github.com/schuhwerk/fuzzygraph" class="link">open source</a>. Project by math artist Caleb Madrigal.</p>
+                </section>
 
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+                <section id="help-equation">
+                    <h3>Equation</h3>
+                    <p>Needs one <code>=</code> and uses <code>x</code> and <code>y</code>, e.g. <code>y = x^2</code>. Polar equations use <code>r</code> (distance from the origin) and <code>t</code> (angle, 0 to 2π), e.g. <code>r = sin(3*t)</code>. Complex numbers work with <code>i</code>; the two sides are compared by their real parts.</p>
+                    <p><strong>Functions</strong> inserts functions and opens the Cymatics, Mandelbrot and Julia generators. <strong>Editor</strong> opens a larger editing window.</p>
+                    <p>Drag left/right or scroll over any number in the equation to change it.</p>
+                    <p><a class="link" href="./examples.html">View examples</a></p>
+                </section>
 
-            <!-- X button -->
-            <button id="helpModalX"
-                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
-                &times;
-            </button>
+                <section id="help-fuzziness">
+                    <h3>Fuzzy function</h3>
+                    <p>Turns the error at each point into a color position. <code>v</code> is the error (0 = exactly true) and <code>f</code> is a parameter you set with the slider (0.01 to 1). The default is <code>(v + 0.000001)^f</code>: a small <code>f</code> spreads the colors over the low errors near the graph, a large one keeps the error closer to linear. Pick a preset or write your own with the same functions as equations, e.g. <code>log(v + 0.01)</code>.</p>
+                    <p>At <code>f</code> = 0 the function is not used and the graph is drawn as plain lines.</p>
+                </section>
 
-            <h2 class="text-xl font-semibold mb-4">FuzzyGraph</h2>
-            <p>FuzzyGraph is the world's first fuzzy (non-binary) graphing calculator. FuzzyGraph is also free and <a href="https://github.com/schuhwerk/fuzzygraph" class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200">open-source</a>.</p>
-            <br />
-            <p>Conventional graphing apps show where the LEFT and RIGHT side of the equation are EXACTLY equal. By
-                comparison, FuzzyGraph shows the error gradient of the equation. Instead of collapsing the evaluation
-                into either
-                TRUE or FALSE, it instead, shows the "shades of gray", choosing colors based on how near or far both
-                sides are to being equal at every point in the visible area.</p>
-            <br />
-            <p>Another way to think about it is this: fuzzy graphs are graphs of approximate equations (≈).</p>
-            <br />
-            <p class="text-right">Project by math artist Caleb Madrigal.</p>
-        </div>
-    </div>
+                <section id="help-colors">
+                    <h3>Colors</h3>
+                    <p>The equation defines the data; the color map defines which colors show which values. The bar next to the color map name is the current mapping, smallest error on the left.</p>
+                    <p><strong>Reverse</strong> flips the color map end to end. <strong>Invert</strong> inverts the colors themselves (like a photo negative).</p>
+                    <p>The same data can be shown in many ways. There is no one right representation.</p>
+                </section>
 
-    <!-- Equation help modal -->
-    <div id="equationHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <section id="help-advanced">
+                    <h3>Advanced</h3>
+                    <p><strong>Value range</strong>: colors are spread between the smallest and largest error in view. Errors are absolute values, so the minimum is usually 0. A small area of very large error can wash out everything else, like the sun in a photo; setting a lower max brings back the detail. Empty means automatic.</p>
+                    <p><strong>Color start</strong> and <strong>color cycles</strong> shift and repeat the color map. <strong>Hue</strong>, <strong>saturation</strong> and <strong>lightness</strong> adjust its colors. While Advanced is closed, the value range resets whenever the view or the equation changes.</p>
+                </section>
 
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+                <section id="help-shortcuts">
+                    <h3>Shortcuts</h3>
+                    <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+                        <dt><kbd>Ctrl/⌘</kbd>+<kbd>Z</kbd></dt><dd>Undo a settings change (the view is not affected)</dd>
+                        <dt><kbd>Ctrl/⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Y</kbd></dt><dd>Redo</dd>
+                        <dt><kbd>Ctrl/⌘</kbd>+<kbd>K</kbd></dt><dd>Functions menu</dd>
+                        <dt>Drag / scroll a number</dt><dd>Change it; <kbd>Shift</kbd> finer, <kbd>Ctrl</kbd> coarser</dd>
+                        <dt><kbd>Alt</kbd>+<kbd>↑</kbd>/<kbd>↓</kbd></dt><dd>Step the number at the cursor</dd>
+                        <dt>Scroll a dropdown</dt><dd>Step through its options</dd>
+                        <dt>Drag / scroll the graph</dt><dd>Pan / zoom (pinch on touch screens)</dd>
+                        <dt><kbd>Esc</kbd></dt><dd>Close dialogs and menus</dd>
+                    </dl>
+                </section>
 
-            <!-- X button -->
-            <button id="equationHelpModalX"
-                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
-                &times;
-            </button>
-
-            <h2 class="text-xl font-semibold mb-4">Equation Help</h2>
-            <div class="w-full max-w-md p-4">
-                <div>
-                    <p>Equations must have an <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">=</span> sign, and can use variables <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">x</span>  and <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">y</span>. For example: <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">y = x^2</span>.</p>
-                    <br />
-                    <a class="text-cyan-500 underline hover:text-cyan-300 underline transition-colors duration-200"
-                       href="./examples.html">View Examples</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Controls help modal -->
-    <div id="controlsHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-
-            <!-- X button -->
-            <button id="controlsHelpModalX"
-                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
-                &times;
-            </button>
-
-            <h2 class="text-xl font-semibold mb-4">Controls Help</h2>
-            <div class="w-full max-w-md p-4">
-                <div>
-                    <h3 class="font-bold">Fuzzy Level</h3>
-                    <p>The <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">Fuzzy Level</span> expands or squishes the equation so that the peaks and valleys are closer together, or further apart. This has an effect on how the colors manifest.</p>
-                    <br />
-                    <h3 class="font-bold">Fuzzy Function</h3>
-                    <p>The function that turns each pixel's error into a color position. <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">v</span> is the error (0 means the equation is exactly true) and <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">f</span> is the Fuzzy Level as a fraction (30% is 0.3). The default is <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">(v + 0.000001)^f</span>. Pick a preset or type your own using the same math functions as equations, e.g. <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">log(v + 0.01)</span>. At a Fuzzy Level of 0% the graph is drawn as plain lines and the function is not used.</p>
-                    <br />
-                    <h3 class="font-bold">Show Axes</h3>
-                    <p>Turns the X and Y Axes on or off</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Color Map help modal -->
-    <div id="colorMapHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-
-            <!-- X button -->
-            <button id="colorMapHelpModalX"
-                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
-                &times;
-            </button>
-
-            <h2 class="text-xl font-semibold mb-4">Color Map Help</h2>
-            <div class="w-full max-w-md p-4">
-                <div>
-                    <p>There are two parts: the <span class="font-bold">data</span> and the <span class="font-bold">representation</span>.</p>
-                    <br />
-                    <p><span class="font-bold">The Equation</span> defines the data.</p>
-                    <p><span class="font-bold">The Color Map</span> defines which colors are used to represent which values. For example, in the <span class="font-mono bg-gray-100 text-gray-800 px-1 py-0.5 rounded">rainbow</span> color map, the <span class="italic">lowest</span> value maps to <span class="text-purple-500">purple</span>, and the <span class="italic">highest</span> value maps to <span class="text-red-500">red</span>. If <span class="font-bold">Invert Color</span> is on, then the <span class="italic">lowest</span> value maps to <span class="text-red-500">red</span> and the <span class="italic">highest</span> value maps to <span class="text-purple-500">purple</span>.</p>
-                    <br />
-                    <p>The same equation/data can be represented in many different ways. <span class="font-bold">There is no one right representation.</span></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Advanced help modal -->
-    <div id="advancedHelpModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-        <!-- Modal content -->
-        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
-
-            <!-- X button -->
-            <button id="advancedHelpModalX"
-                class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold focus:outline-none">
-                &times;
-            </button>
-
-            <h2 class="text-xl font-semibold mb-4">Advanced Help</h2>
-            <div class="w-full max-w-md p-4">
-                <div>
-                    <h3 class="font-bold">Min Override</h3>
-                    <p>Since FuzzyGraph takes the absolute value of the error, the minimum value is typically 0, and usually does not need to be changed.</p>
-                    <br />
-                    <h3 class="font-bold">Max Override</h3>
-                    <p>Just as a bright light (like the sun) can "wash out" everything else in a photo, so also a section of really high error can wash out the rest of the mathematical topography (which hides many of the details). So it is often valuable to clamp down on the max value by setting a "Max Override".</p>
+                <div class="pt-2">
+                    <button id="downloadFuzzyGraphBtn" type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md bg-zinc-900 text-white hover:bg-zinc-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                        Download offline copy
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Math Input Popover -->
-    <div id="mathPopover" role="dialog" aria-label="Insert math"
-        style="position:absolute; top:100%; right:0; margin-top:6px; z-index:1000; max-width:min(560px, 96vw);
-                                                background:#fff; border:1px solid #ddd; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.12); padding:10px; display:none;">
-        <div style="display:flex; gap:6px; align-items:center; margin-bottom:8px;">
-            <input id="mathFilter" type="text" placeholder="Filter (e.g., sin, sqrt, log)…"
-                style="flex:1; padding:8px 10px; border:1px solid #ddd; border-radius:8px; font-size:14px;">
-            <button id="closePopover" type="button" aria-label="Close"
-                style="height:32px; width:32px; border-radius:8px; border:1px solid #ddd; background:#fff; cursor:pointer;">✕</button>
+    <div id="mathPopover" role="dialog" aria-label="Insert math" class="dark popover w-[min(32rem,calc(100vw-12px))]" style="display:none">
+        <div class="flex items-center gap-2 mb-2">
+            <input id="mathFilter" type="text" placeholder="Filter (sin, sqrt, log…)" class="field flex-1">
+            <button type="button" id="clearEquationBtn" class="chip" title="Empty the equation">Clear</button>
+            <button id="closePopover" type="button" aria-label="Close" class="chip">✕</button>
         </div>
-
-        <!-- Action grid: now with top-row keys -->
-        <div id="fnGrid"
-            style="display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; max-height:346px; overflow:auto;">
-            <!-- Top row: basic variable and operator keys -->
-            <button class="fn" id="clearEquationBtn" title="C">CLEAR</button>
-            <button class="fn" data-insert="y" title="y">y</button>
-            <button class="fn" data-insert="=" title="equals">=</button>
-            <button class="fn" data-insert="x" title="x">x</button>
-            <button class="fn" data-insert="+" title="plus">+</button>
-            <button class="fn" data-insert="-" title="minus">−</button>
-            <button class="fn" data-insert="*" title="multiply">*</button>
-            <button class="fn" data-insert="/" title="divide">/</button>
-            <button class="fn" data-wrap-start="sqrt(" data-wrap-end=")" title="sqrt(x)">√(·)</button>
-            <button class="fn" data-insert="^2" title="square">^2</button>
-            <button class="fn" data-insert="^3" title="cube">^3</button>
-            <button class="fn" data-insert="^" title="power">x^y</button>
-
-            <!-- Trigonometric -->
-            <button class="fn" data-wrap-start="sin(" data-wrap-end=")" title="sin(x)">sin(·)</button>
-            <button class="fn" data-wrap-start="cos(" data-wrap-end=")" title="cos(x)">cos(·)</button>
-            <button class="fn" data-wrap-start="tan(" data-wrap-end=")" title="tan(x)">tan(·)</button>
-            <button class="fn" data-wrap-start="asin(" data-wrap-end=")" title="asin(x)">asin(·)</button>
-            <button class="fn" data-wrap-start="acos(" data-wrap-end=")" title="acos(x)">acos(·)</button>
-            <button class="fn" data-wrap-start="atan(" data-wrap-end=")" title="atan(x)">atan(·)</button>
-            <button class="fn" data-wrap-start="atan2(" data-wrap-end=", y)" title="atan2(x, y)">atan2(·,y)</button>
-
-            <!-- Hyperbolic -->
-            <button class="fn" data-wrap-start="sinh(" data-wrap-end=")" title="sinh(x)">sinh(·)</button>
-            <button class="fn" data-wrap-start="cosh(" data-wrap-end=")" title="cosh(x)">cosh(·)</button>
-            <button class="fn" data-wrap-start="tanh(" data-wrap-end=")" title="tanh(x)">tanh(·)</button>
-            <button class="fn" data-wrap-start="asinh(" data-wrap-end=")" title="asinh(x)">asinh(·)</button>
-            <button class="fn" data-wrap-start="acosh(" data-wrap-end=")" title="acosh(x)">acosh(·)</button>
-            <button class="fn" data-wrap-start="atanh(" data-wrap-end=")" title="atanh(x)">atanh(·)</button>
-
-            <!-- Advanced Roots & powers -->
-            <button class="fn" data-wrap-start="pow(" data-wrap-end=", 2)" title="pow(x, 2)">pow(·,2)</button>
-            <button class="fn" data-wrap-start="pow(" data-wrap-end=", y)" title="pow(x, y)">pow(·,y)</button>
-            <button class="fn" data-wrap-start="hypot(" data-wrap-end=", y)" title="hypot(x, y)">hypot(·,y)</button>
-
-            <!-- Exponentials & logs -->
-            <button class="fn" data-wrap-start="exp(" data-wrap-end=")" title="e^x">exp(·)</button>
-            <button class="fn" data-wrap-start="log(" data-wrap-end=")" title="natural log">ln(·)</button>
-            <button class="fn" data-wrap-start="log10(" data-wrap-end=")" title="log base 10">log10(·)</button>
-            <button class="fn" data-wrap-start="log(" data-wrap-end=", 2)" title="log base 2">log(·,2)</button>
-            <button class="fn" data-wrap-start="log(" data-wrap-end=", 10)" title="log base 10 (alt)">log(·,10)</button>
-            <button class="fn" data-wrap-start="log(" data-wrap-end=", b)" title="log base b">log(·,b)</button>
-
-            <!-- Rounding / misc numeric -->
-            <button class="fn" data-wrap-start="round(" data-wrap-end=", 2)" title="round(x, 2)">round(·,2)</button>
-            <button class="fn" data-wrap-start="floor(" data-wrap-end=")" title="floor(x)">floor(·)</button>
-            <button class="fn" data-wrap-start="ceil(" data-wrap-end=")" title="ceil(x)">ceil(·)</button>
-            <button class="fn" data-wrap-start="sign(" data-wrap-end=")" title="sign(x)">sign(·)</button>
-            <button class="fn" data-wrap-start="abs(" data-wrap-end=")" title="abs(x)">abs(·)</button>
-            <button class="fn" data-wrap-start="min(" data-wrap-end=", 1)" title="min(x, 1)">min(·,1)</button>
-            <button class="fn" data-wrap-start="max(" data-wrap-end=", 1)" title="max(x, 1)">max(·,1)</button>
-
-            <!-- Constants & punctuation -->
-            <button class="fn" data-insert="pi" title="π">pi</button>
-            <button class="fn" data-insert="e" title="Euler’s number">e</button>
-            <button class="fn" data-insert="(" title="left paren">(</button>
-            <button class="fn" data-insert=")" title="right paren">)</button>
-            <button class="fn" data-insert="," title="comma">,</button>
-            <button class="fn" data-insert=" " title="space">␠</button>
-
-            <!-- Equation generators -->
-            <button class="fn" id="openCymaticsModal" title="Digital Cymatics Equation Generator">ψ</button>
-            <button class="fn" id="openMandelbrotModal" title="Mandelbrot Generator">Mandelbrot</button>
-            <button class="fn" id="openJuliaModal" title="Julia Set Generator">Julia</button>
+        <div id="fnGrid" class="max-h-[min(26rem,60vh)] overflow-y-auto pr-1">
+            <div class="fn-group">
+                <h4>Basics</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-insert="x" title="x">x</button>
+                    <button type="button" class="fn" data-insert="y" title="y">y</button>
+                    <button type="button" class="fn" data-insert="=" title="equals">=</button>
+                    <button type="button" class="fn" data-insert="+" title="plus">+</button>
+                    <button type="button" class="fn" data-insert="-" title="minus">−</button>
+                    <button type="button" class="fn" data-insert="*" title="multiply">×</button>
+                    <button type="button" class="fn" data-insert="/" title="divide">÷</button>
+                    <button type="button" class="fn" data-insert="^" title="power">x<sup>n</sup></button>
+                    <button type="button" class="fn" data-insert="(" title="left paren">(</button>
+                    <button type="button" class="fn" data-insert=")" title="right paren">)</button>
+                    <button type="button" class="fn" data-insert="," title="comma">,</button>
+                    <button type="button" class="fn" data-insert="pi" title="pi">π</button>
+                    <button type="button" class="fn" data-insert="e" title="Euler's number">e</button>
+                    <button type="button" class="fn" data-insert="r" title="polar radius (distance from origin)">r</button>
+                    <button type="button" class="fn" data-insert="t" title="polar angle in radians, 0 to 2π">t</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Powers &amp; roots</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-insert="^2" title="square">x²</button>
+                    <button type="button" class="fn" data-insert="^3" title="cube">x³</button>
+                    <button type="button" class="fn" data-wrap-start="sqrt(" data-wrap-end=")" title="square root">√(·)</button>
+                    <button type="button" class="fn" data-wrap-start="cbrt(" data-wrap-end=")" title="cube root">∛(·)</button>
+                    <button type="button" class="fn" data-wrap-start="pow(" data-wrap-end=", y)" title="pow(x, y)">pow(·, y)</button>
+                    <button type="button" class="fn" data-wrap-start="hypot(" data-wrap-end=", y)" title="hypot(x, y) = √(x² + y²)">hypot(·, y)</button>
+                    <button type="button" class="fn" data-wrap-start="abs(" data-wrap-end=")" title="absolute value">|·|</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Trigonometry</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-wrap-start="sin(" data-wrap-end=")" title="sin(x)">sin(·)</button>
+                    <button type="button" class="fn" data-wrap-start="cos(" data-wrap-end=")" title="cos(x)">cos(·)</button>
+                    <button type="button" class="fn" data-wrap-start="tan(" data-wrap-end=")" title="tan(x)">tan(·)</button>
+                    <button type="button" class="fn" data-wrap-start="asin(" data-wrap-end=")" title="asin(x)">asin(·)</button>
+                    <button type="button" class="fn" data-wrap-start="acos(" data-wrap-end=")" title="acos(x)">acos(·)</button>
+                    <button type="button" class="fn" data-wrap-start="atan(" data-wrap-end=")" title="atan(x)">atan(·)</button>
+                    <button type="button" class="fn" data-wrap-start="atan2(" data-wrap-end=", y)" title="atan2(x, y)">atan2(·, y)</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Hyperbolic</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-wrap-start="sinh(" data-wrap-end=")" title="sinh(x)">sinh(·)</button>
+                    <button type="button" class="fn" data-wrap-start="cosh(" data-wrap-end=")" title="cosh(x)">cosh(·)</button>
+                    <button type="button" class="fn" data-wrap-start="tanh(" data-wrap-end=")" title="tanh(x)">tanh(·)</button>
+                    <button type="button" class="fn" data-wrap-start="asinh(" data-wrap-end=")" title="asinh(x)">asinh(·)</button>
+                    <button type="button" class="fn" data-wrap-start="acosh(" data-wrap-end=")" title="acosh(x)">acosh(·)</button>
+                    <button type="button" class="fn" data-wrap-start="atanh(" data-wrap-end=")" title="atanh(x)">atanh(·)</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Exponential &amp; log</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-wrap-start="exp(" data-wrap-end=")" title="e^x">exp(·)</button>
+                    <button type="button" class="fn" data-wrap-start="log(" data-wrap-end=")" title="natural log">ln(·)</button>
+                    <button type="button" class="fn" data-wrap-start="log10(" data-wrap-end=")" title="log base 10">log10(·)</button>
+                    <button type="button" class="fn" data-wrap-start="log2(" data-wrap-end=")" title="log base 2">log2(·)</button>
+                    <button type="button" class="fn" data-wrap-start="log(" data-wrap-end=", b)" title="log base b">log(·, b)</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Rounding &amp; misc</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-wrap-start="floor(" data-wrap-end=")" title="floor(x)">floor(·)</button>
+                    <button type="button" class="fn" data-wrap-start="ceil(" data-wrap-end=")" title="ceil(x)">ceil(·)</button>
+                    <button type="button" class="fn" data-wrap-start="round(" data-wrap-end=")" title="round(x)">round(·)</button>
+                    <button type="button" class="fn" data-wrap-start="round(" data-wrap-end=", 2)" title="round to 2 decimals">round(·, 2)</button>
+                    <button type="button" class="fn" data-wrap-start="sign(" data-wrap-end=")" title="sign(x)">sign(·)</button>
+                    <button type="button" class="fn" data-wrap-start="mod(" data-wrap-end=", y)" title="remainder of x / y">mod(·, y)</button>
+                    <button type="button" class="fn" data-wrap-start="min(" data-wrap-end=", y)" title="smaller of two values">min(·, y)</button>
+                    <button type="button" class="fn" data-wrap-start="max(" data-wrap-end=", y)" title="larger of two values">max(·, y)</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Complex</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn" data-insert="i" title="imaginary unit">i</button>
+                    <button type="button" class="fn" data-wrap-start="re(" data-wrap-end=")" title="real part">re(·)</button>
+                    <button type="button" class="fn" data-wrap-start="im(" data-wrap-end=")" title="imaginary part">im(·)</button>
+                    <button type="button" class="fn" data-wrap-start="conj(" data-wrap-end=")" title="complex conjugate">conj(·)</button>
+                </div>
+            </div>
+            <div class="fn-group">
+                <h4>Generators</h4>
+                <div class="fn-row">
+                    <button type="button" class="fn fn-wide" id="openCymaticsModal" title="Digital Cymatics equation generator">ψ Cymatics</button>
+                    <button type="button" class="fn fn-wide" id="openMandelbrotModal" title="Mandelbrot set">Mandelbrot</button>
+                    <button type="button" class="fn fn-wide" id="openJuliaModal" title="Julia set">Julia</button>
+                </div>
+            </div>
         </div>
-
-        <div style="font-size:12px; color:#666; margin-top:8px;">
-            Tip: Select text first to wrap it, or place the cursor to insert. Open with <kbd>Ctrl/⌘</kbd>+<kbd>K</kbd>,
-            close with <kbd>Esc</kbd>.
-        </div>
+        <p class="hint mt-2">Select text first to wrap it, or place the cursor to insert. <kbd>Ctrl/⌘</kbd>+<kbd>K</kbd> opens, <kbd>Esc</kbd> closes.</p>
     </div>
     <!-- END of Math Input Popover -->
+
+    <!-- Color map list -->
+    <div id="colorMapList" role="listbox" aria-label="Color maps" class="dark popover p-1.5 flex flex-col" style="display:none">
+        <input id="colorMapFilter" type="text" placeholder="Filter color maps…" class="field mb-1.5" autocomplete="off" spellcheck="false">
+        <div id="colorMapOptions" class="min-h-0 flex-1 overflow-y-auto"></div>
+    </div>
 
     <!-- Equation Modal -->
     <div
