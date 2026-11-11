@@ -353,7 +353,27 @@ function downloadFuzzygraph() {
 }
 
 // Save Image
+// Downloads the graph as a PNG with its settings embedded.
 async function saveImage(w=null, h=null, cX=null, cY=null, z=null, yH=null, filename=null) {
+    const image = await createImage(w, h, cX, cY, z, yH);
+    const finalFilename = (filename && String(filename).trim() !== '') ? filename : image.filename;
+    downloadBlob(image.blob, finalFilename);
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// Renders the graph (with the Save dialog's settings) to a PNG Blob that carries
+// the graph settings, so FuzzyGraph can reopen it.
+async function createImage(w=null, h=null, cX=null, cY=null, z=null, yH=null) {
     const fallbackW = canvas.width;
     const fallbackH = canvas.height;
 
@@ -537,17 +557,6 @@ async function saveImage(w=null, h=null, cX=null, cY=null, z=null, yH=null, file
     }
 
     // Helpers
-    function downloadBlob(blob, filename) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
     function canvasToBlob(canvas, type = 'image/png', quality) {
       return new Promise(resolve => canvas.toBlob(resolve, type, quality));
     }
@@ -575,11 +584,7 @@ async function saveImage(w=null, h=null, cX=null, cY=null, z=null, yH=null, file
     graphConfig['createdDate'] = new Date().toISOString().split('T')[0];
 
     const imgBlobWithData = await addJsonITXtToPng(imgBlob, graphConfig);
-
-    const finalFilename = (filename && String(filename).trim() !== '')
-        ? filename
-        : getFilenameWithTimestamp();
-    downloadBlob(imgBlobWithData, finalFilename);
+    return { blob: imgBlobWithData, filename: getFilenameWithTimestamp() };
 }
 
 
@@ -1059,7 +1064,85 @@ function populateGotoModalFields() {
 document.getElementById("downloadFuzzyGraphBtn").addEventListener('click', downloadFuzzygraph);
 
 // TOP MENU EVENTS
-showShareModal.listen((visible) => { document.getElementById('shareModal').classList.toggle('hidden', !visible); showURL(); });
+showShareModal.listen((visible) => {
+    document.getElementById('shareModal').classList.toggle('hidden', !visible);
+    if (visible) {
+        showURL();
+        prepareShareImage();
+    }
+});
+
+// Share the image together with its link (e.g. picture + caption in a chat app).
+// The image is rendered when the dialog opens: browsers only allow opening the
+// share sheet right after a tap, so there is no time to render it on click.
+const shareImageButton = document.getElementById('shareImageButton');
+const shareImageLabel = document.getElementById('shareImageLabel');
+const shareStatus = document.getElementById('shareStatus');
+const sharePreview = document.getElementById('sharePreview');
+let sharePayload = null;
+let shareRequest = 0;
+
+function shareTitle() {
+    const eq = equation.get().trim();
+    return `FuzzyGraph: ${eq.length > 80 ? `${eq.slice(0, 77)}…` : eq}`;
+}
+
+async function prepareShareImage() {
+    const request = ++shareRequest;
+    sharePayload = null;
+    shareImageButton.disabled = true;
+    shareImageLabel.textContent = 'Preparing image…';
+    shareStatus.textContent = '';
+    if (sharePreview.src) URL.revokeObjectURL(sharePreview.src);
+    sharePreview.removeAttribute('src');
+    try {
+        const image = await createImage();
+        if (request !== shareRequest) return;
+        const file = new File([image.blob], image.filename, { type: 'image/png' });
+        const url = getShareUrl();
+        const canShareFile = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+        sharePayload = { file, url, title: shareTitle(), canShareFile };
+        sharePreview.src = URL.createObjectURL(image.blob);
+        shareImageLabel.textContent = canShareFile ? 'Share image + link' : 'Download image + copy link';
+        shareImageButton.disabled = false;
+    } catch (err) {
+        if (request !== shareRequest) return;
+        console.error('Could not create the share image:', err);
+        shareImageLabel.textContent = 'Image not available';
+        shareStatus.textContent = 'The image could not be created. The link below still works.';
+    }
+}
+
+async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+shareImageButton.addEventListener('click', async () => {
+    if (!sharePayload) return;
+    const { file, url, title, canShareFile } = sharePayload;
+    if (canShareFile) {
+        try {
+            // The link goes in the text: some apps drop the separate url field when files are shared
+            await navigator.share({ files: [file], title, text: `${title}\n${url}` });
+            shareStatus.textContent = '';
+        } catch (err) {
+            if (err.name !== 'AbortError') {
+                shareStatus.textContent = `Sharing failed (${err.message}). Use the link below instead.`;
+            }
+        }
+        return;
+    }
+    downloadBlob(file, file.name);
+    const copied = await copyText(`${title}\n${url}`);
+    shareStatus.textContent = copied
+        ? 'Image downloaded and link copied. Attach the image and paste the link as its caption.'
+        : 'Image downloaded. Copy the link below and add it as the caption.';
+});
 showHelpModal.listen((visible) => { document.getElementById('helpModal').classList.toggle('hidden', !visible); });
 showOpenModal.listen((visible) => { document.getElementById('openModal').classList.toggle('hidden', !visible); });
 showSaveModal.listen((visible) => {
